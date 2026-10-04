@@ -1,16 +1,17 @@
 <!doctype html>
-<html lang="id">
+<html lang="id" class="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TextCheck AI - Standalone Workspace</title>
+  <title>TextCheck AI - Smart Analyzer & Rewriter</title>
+  
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- PDF.js untuk ekstraksi PDF secara terus di browser -->
+  <!-- PDF.js CDN untuk ekstraksi dokumen PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-  <!-- Mammoth.js untuk membaca fail DOCX di browser -->
+  <!-- Mammoth.js CDN untuk ekstraksi dokumen DOCX Word -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-  
+
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -18,19 +19,19 @@
         extend: {
           colors: {
             brand: {
-              50: '#f5f3ff',
               400: '#a78bfa',
               500: '#8b5cf6',
-              600: '#7c3aed',
-              700: '#6d28d9',
-              accent: '#8b7cff'
+              600: '#6d5dfc',
+              700: '#5845eb',
+              accent: '#8b7cff',
+              teal: '#14b8a6'
             },
             dark: {
               bg: '#0b1020',
               card: '#11182c',
               border: '#263052',
-              hover: '#1b243f',
-              input: '#0d1326'
+              hover: '#1b2542',
+              input: '#0d1427'
             }
           }
         }
@@ -39,7 +40,7 @@
   </script>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
     
     body {
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -52,7 +53,6 @@
       font-family: 'JetBrains Mono', monospace;
     }
 
-    /* Custom scrollbars */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -68,571 +68,979 @@
       background: #475569;
     }
 
-    /* Diff styling */
-    .diff-highlight {
-      background-color: rgba(139, 124, 255, 0.25);
+    /* Diff Visualizer styling */
+    .diff-changed {
+      background: rgba(109, 93, 252, 0.22);
+      color: #c4b5fd;
       border-bottom: 2px solid #8b7cff;
-      padding: 0 2px;
-      border-radius: 2px;
+      padding: 1px 4px;
+      border-radius: 4px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    .diff-changed:hover {
+      background: rgba(109, 93, 252, 0.45);
+      color: #ffffff;
     }
 
     @media print {
       body {
         background-color: #ffffff !important;
-        color: #000000 !important;
+        color: #0f172a !important;
       }
       .no-print {
         display: none !important;
       }
-      .print-only {
+      .print-report-container {
         display: block !important;
       }
-      .card-print {
-        border: 1px solid #ccc !important;
-        background: none !important;
-        box-shadow: none !important;
-        color: #000 !important;
+      .report-card {
+        border: 1px solid #cbd5e1 !important;
+        page-break-inside: avoid;
+        margin-bottom: 1rem;
+        padding: 1rem;
       }
     }
   </style>
 </head>
-<body class="selection:bg-brand-600 selection:text-white pb-12">
+<body class="selection:bg-brand-600 selection:text-white pb-14 antialiased">
 
-  <nav class="border-b border-dark-border bg-dark-bg/80 backdrop-blur sticky top-0 z-50 no-print">
+  <nav class="border-b border-dark-border bg-dark-bg/90 backdrop-blur sticky top-0 z-50 no-print">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-3">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center font-black text-white text-lg shadow-lg shadow-brand-500/20">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center font-black text-white text-lg shadow-lg shadow-brand-600/30">
           TC
         </div>
-        <div class="text-xl font-extrabold tracking-tight">
-          TextCheck <span class="text-brand-accent">AI</span>
-          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20 ml-2 hidden sm:inline-block">v2.1 Client-Engine</span>
+        <div>
+          <span class="text-xl font-extrabold tracking-tight">TextCheck <span class="text-brand-accent">AI</span></span>
+          <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20 ml-2 hidden sm:inline-block">Client Pro v2.6</span>
         </div>
       </div>
       
-      <div class="flex items-center space-x-3">
-        <!-- Client Status Indicator -->
-        <div class="flex items-center space-x-2 text-xs font-medium text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-3 py-1.5 rounded-full">
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <!-- Status Engine Badge -->
+        <div id="engineStatusPill" class="flex items-center space-x-2 text-xs font-medium text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-3 py-1.5 rounded-full">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>Engine Online (Client-Side)</span>
+          <span class="hidden md:inline" id="engineStatusLabel">Local Rewriter Engine</span>
         </div>
-        
-        <!-- Print / PDF Button -->
-        <button id="btnPrint" title="Cetak Laporan Lengkap" class="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-dark-hover border border-dark-border transition">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+
+        <!-- API Key Settings Button -->
+        <button id="btnOpenKeyModal" title="Konfigurasi Kunci API (Opsional)" class="p-2 text-slate-300 hover:text-white rounded-xl hover:bg-dark-hover border border-dark-border transition flex items-center space-x-1.5 text-xs">
+          <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+          <span class="hidden sm:inline" id="keyBtnLabel">Gemini API Key</span>
+        </button>
+
+        <!-- Export/Print Button -->
+        <button id="btnPrintReport" title="Cetak / Unduh PDF Laporan" class="p-2 text-slate-300 hover:text-white rounded-xl hover:bg-dark-hover border border-dark-border transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
         </button>
       </div>
     </div>
   </nav>
 
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-    <div class="text-center sm:text-left mb-6">
-      <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-        Analisis. Parafrasa. Tingkatkan Kualiti Teks.
-      </h1>
-      <p class="mt-2 text-slate-400 text-sm sm:text-base max-w-3xl">
-        Kesan probabiliti janaan AI, analisis kepelbagaian kosa kata & pengulangan teks, serta buat penulisan semula dalam pelbagai gaya secara terus di dalam pelayar anda tanpa perlu sambungan server luar.
-      </p>
-    </div>
-
-    <!-- Mode Tabs -->
-    <div class="flex items-center space-x-2 border-b border-dark-border pb-3 mb-6 no-print">
-      <button id="tabAnalyze" class="tab-btn px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 bg-brand-600 text-white shadow-lg shadow-brand-600/30 flex items-center space-x-2">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-        <span>Penganalisis Teks (Analyzer)</span>
-      </button>
-      <button id="tabParaphrase" class="tab-btn px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 text-slate-400 hover:text-white hover:bg-dark-hover flex items-center space-x-2">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-        <span>Parafrasa Pintar (Paraphrase)</span>
-      </button>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+  <div id="modalKey" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-dark-card border border-dark-border rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-3 border-b border-dark-border">
+        <h3 class="font-bold text-white text-base flex items-center space-x-2">
+          <span>Pengaturan Gemini AI API (Opsional)</span>
+        </h3>
+        <button id="btnCloseKeyModal" class="text-slate-400 hover:text-white text-xl leading-none">&times;</button>
+      </div>
       
-      <!-- Left Column: Input and Operations -->
-      <div class="lg:col-span-7 flex flex-col space-y-4">
-        
-        <div class="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-xl relative backdrop-blur-sm">
+      <p class="text-xs text-slate-400 mt-3 leading-relaxed">
+        Aplikasi ini <strong>sudah siap digunakan 100% gratis</strong> dengan mesin tesaurus algoritma internal tanpa perlu API Key.
+      </p>
+      <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+        Namun, jika Anda memiliki <strong>Google Gemini API Key</strong>, Anda dapat memasukkannya di bawah ini untuk mengaktifkan pemrosesan LLM tingkat lanjut. Kunci disimpan aman hanya di <code class="text-brand-300">localStorage</code> browser Anda.
+      </p>
+
+      <div class="mt-4">
+        <label class="block text-xs font-semibold text-slate-300 mb-1">Google Gemini API Key:</label>
+        <input type="password" id="inputApiKey" placeholder="AIzaSy..." class="w-full bg-dark-input text-slate-100 text-xs border border-dark-border rounded-xl p-3 outline-none focus:border-brand-500 font-mono-code transition">
+      </div>
+
+      <div class="mt-5 flex items-center justify-between">
+        <button id="btnClearKey" class="px-3 py-1.5 rounded-lg text-xs text-rose-400 hover:bg-rose-500/10 transition">Hapus Kunci</button>
+        <div class="flex space-x-2">
+          <button id="btnCancelKey" class="px-3.5 py-1.5 rounded-lg text-xs text-slate-400 hover:bg-dark-hover transition">Batal</button>
+          <button id="btnSaveKey" class="px-4 py-1.5 rounded-lg text-xs bg-brand-600 hover:bg-brand-500 text-white font-semibold transition">Simpan & Aktifkan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+    
+    <!-- Hero / Mode Switcher -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 no-print">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          Pusat Analisis & Parafrasa Teks AI
+        </h1>
+        <p class="mt-1 text-slate-400 text-xs sm:text-sm">
+          Deteksi probabilitas AI, analisa pengulangan kata, dan parafrasakan kalimat untuk hasil yang lebih alami dan akademis.
+        </p>
+      </div>
+
+      <!-- Main Navigation Tabs -->
+      <div class="flex items-center space-x-1.5 bg-dark-card p-1.5 rounded-2xl border border-dark-border w-fit shadow-md">
+        <button id="navTabPara" class="px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 bg-brand-600 text-white shadow-md shadow-brand-600/30 flex items-center space-x-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          <span>Parafrase (Rewriter)</span>
+        </button>
+        <button id="navTabAnalyzer" class="px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 text-slate-400 hover:text-white hover:bg-dark-hover flex items-center space-x-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+          <span>Penganalisis AI (Analyzer)</span>
+        </button>
+      </div>
+    </div>
+
+    <section id="viewParaphrase" class="space-y-6">
+      
+      <!-- Paraphrase Controls Toolbar -->
+      <div class="bg-dark-card border border-dark-border rounded-2xl p-4 shadow-xl flex flex-wrap items-center justify-between gap-4">
+        <div class="flex flex-wrap items-center gap-3">
           
-          <div class="flex items-center justify-between pb-3 border-b border-dark-border/60">
-            <span class="text-xs font-bold tracking-wider text-slate-400 uppercase flex items-center space-x-2">
-              <span class="w-2 h-2 rounded-full bg-brand-400"></span>
-              <span>Input Teks / Dokumen</span>
-            </span>
-            <div class="flex items-center space-x-2 text-xs">
-              <button id="btnSample" class="text-brand-accent hover:text-brand-300 font-medium px-2 py-1 rounded bg-brand-500/10 border border-brand-500/20 transition">
-                Guna Sampel
-              </button>
-              <button id="btnClear" class="text-slate-400 hover:text-red-400 px-2 py-1 transition">
-                Kosongkan
-              </button>
-            </div>
+          <!-- Style Select -->
+          <div class="flex items-center space-x-2">
+            <label class="text-xs font-semibold text-slate-400">Gaya:</label>
+            <select id="selectParaStyle" class="bg-dark-input text-slate-200 text-xs border border-dark-border rounded-xl px-3 py-2 outline-none focus:border-brand-500 font-medium">
+              <option value="academic">Akademik & Ilmiah (Jurnal/Skripsi)</option>
+              <option value="formal">Formal & Profesional (Dokumen Resmi)</option>
+              <option value="natural" selected>Natural & Mengalir (Humanis)</option>
+              <option value="simple">Ringkas & Padat (To-the-point)</option>
+              <option value="creative">Kreatif & Berbobot</option>
+            </select>
           </div>
 
-          <!-- Textarea Input -->
-          <div class="mt-4 relative">
-            <textarea id="inputText" rows="11" class="w-full bg-dark-input text-slate-100 placeholder-slate-500 text-sm sm:text-base border border-dark-border rounded-xl p-4 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition resize-y font-normal leading-relaxed" placeholder="Tampal atau taip teks di sini untuk menganalisis keaslian, pengulangan, struktur ayat, atau membuat parafrasa secara automatik..."></textarea>
-            
-            <!-- Realtime Counters in textarea -->
-            <div class="absolute bottom-3 right-4 flex items-center space-x-3 text-xs text-slate-400 bg-dark-bg/90 px-2.5 py-1 rounded-md border border-dark-border/70 pointer-events-none">
-              <span><strong id="liveCharCount" class="text-slate-200">0</strong> aksara</span>
-              <span>•</span>
-              <span><strong id="liveWordCount" class="text-slate-200">0</strong> perkataan</span>
-            </div>
+          <!-- Intensity Slider / Select -->
+          <div class="flex items-center space-x-2">
+            <label class="text-xs font-semibold text-slate-400">Intensitas:</label>
+            <select id="selectParaIntensity" class="bg-dark-input text-slate-200 text-xs border border-dark-border rounded-xl px-3 py-2 outline-none focus:border-brand-500 font-medium">
+              <option value="high" selected>Maksimal (Rombak Klausa & Sinonim Agresif)</option>
+              <option value="medium">Sedang (Variasi Frasa & Kosa Kata)</option>
+              <option value="low">Ringan (Penyesuaian Kata Dasar)</option>
+            </select>
           </div>
 
-          <!-- File Upload Dropzone -->
-          <div id="dropZone" class="mt-4 border-2 border-dashed border-dark-border hover:border-brand-500/60 rounded-xl p-4 text-center cursor-pointer transition bg-dark-input/50 group">
-            <input type="file" id="fileInput" class="hidden" accept=".txt,.pdf,.docx">
-            <div class="flex flex-col items-center justify-center space-y-1">
-              <svg class="w-7 h-7 text-slate-500 group-hover:text-brand-accent transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-              <p id="fileLabel" class="text-xs sm:text-sm text-slate-300 font-medium">Klik atau seret fail dokumen ke sini</p>
-              <p class="text-[11px] text-slate-500">Menyokong fail PDF, DOCX (Word), dan TXT (Maksimum 15MB)</p>
-            </div>
+          <div class="hidden sm:flex items-center text-xs text-brand-400 bg-brand-500/10 border border-brand-500/20 px-3 py-1.5 rounded-xl">
+            <span id="activeModeBadge">Mesin: Algoritma Sintaksis Lokal</span>
           </div>
-
-          <!-- Action bar -->
-          <div class="mt-5 flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-dark-border/60">
-            <!-- Selector for Paraphrase Style (visible if in Paraphrase mode) -->
-            <div id="paraphraseOptions" class="hidden flex items-center space-x-2">
-              <label for="paraphraseStyle" class="text-xs text-slate-400 font-medium">Gaya Teks:</label>
-              <select id="paraphraseStyle" class="bg-dark-input text-slate-200 text-xs sm:text-sm border border-dark-border rounded-lg px-3 py-2 outline-none focus:border-brand-500">
-                <option value="academic">Akademik & Formal</option>
-                <option value="formal">Profesional Perniagaan</option>
-                <option value="natural">Natural & Santai</option>
-                <option value="simple">Ringkas & Padat</option>
-              </select>
-            </div>
-
-            <!-- Notification Toast / Status Info -->
-            <div id="statusMessage" class="text-xs text-slate-400 italic flex-1 truncate">
-              Sedia untuk penganalisisan.
-            </div>
-
-            <!-- Primary Execute Action Button -->
-            <button id="btnExecute" class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-brand-600/30 active:scale-95 transition flex items-center justify-center space-x-2">
-              <svg id="btnSpinner" class="w-4 h-4 animate-spin hidden" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-              <span id="btnText">Analisis Teks</span>
-            </button>
-          </div>
-
         </div>
 
-        <!-- Paraphrase Side-by-Side Diff Section (Shown in Paraphrase mode) -->
-        <div id="paraphraseResultCard" class="hidden bg-dark-card border border-dark-border rounded-2xl p-5 shadow-xl">
-          <div class="flex items-center justify-between pb-3 border-b border-dark-border">
-            <span class="text-xs font-bold tracking-wider text-brand-400 uppercase flex items-center space-x-2">
-              <span>Hasil Parafrasa Pintar</span>
-            </span>
-            <button id="btnCopyParaphrase" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-dark-hover hover:bg-brand-600 text-slate-300 hover:text-white transition flex items-center space-x-1.5 border border-dark-border">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-              <span>Salin Teks</span>
-            </button>
-          </div>
-          
-          <div class="mt-4 p-4 rounded-xl bg-dark-input border border-dark-border text-slate-200 text-sm leading-relaxed" id="paraphraseOutput">
-            Hasil penulisan semula akan dipaparkan di sini.
+        <!-- Action Buttons -->
+        <div class="flex items-center space-x-2">
+          <button id="btnInsertSamplePara" class="text-xs font-semibold text-brand-accent hover:text-brand-300 px-3.5 py-2 rounded-xl bg-brand-500/10 border border-brand-500/20 transition">
+            Sampel Teks
+          </button>
+          <button id="btnExecutePara" class="px-5 py-2 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm tracking-wide shadow-lg shadow-brand-600/30 active:scale-95 transition flex items-center space-x-2">
+            <svg id="paraSpinnerIcon" class="w-4 h-4 animate-spin hidden" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+            <span id="paraBtnCaption">Parafrase Sekarang</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Side-by-side Dual Editor Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        
+        <!-- Left Editor: Input -->
+        <div class="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-3 border-b border-dark-border">
+              <span class="text-xs font-bold tracking-wider text-slate-400 uppercase flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
+                <span>Teks Asli</span>
+              </span>
+              <div class="flex items-center space-x-3">
+                <span id="labelParaInputWords" class="text-xs text-slate-400">0 kata</span>
+                <button id="btnClearParaInput" class="text-xs text-slate-500 hover:text-rose-400 transition">Hapus</button>
+              </div>
+            </div>
+
+            <textarea id="paraInputArea" rows="12" class="w-full mt-4 bg-dark-input text-slate-100 placeholder-slate-500 text-sm border border-dark-border rounded-xl p-4 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition resize-none leading-relaxed" placeholder="Ketik atau tempel teks yang ingin diparafrasakan di sini..."></textarea>
           </div>
 
-          <div class="mt-3 flex items-center justify-between text-xs text-slate-400">
-            <span id="paraphraseChangesNote">0 frasa diubah</span>
-            <button id="btnApplyParaphrase" class="text-brand-accent hover:underline">Gunakan teks ini dalam penganalisis</button>
+          <!-- Footer Metrik Sebelum -->
+          <div class="mt-4 pt-3 border-t border-dark-border flex items-center justify-between text-xs text-slate-400">
+            <div class="flex items-center space-x-2">
+              <span>Indikasi AI Awal:</span>
+              <span id="metricBeforeAi" class="font-bold text-amber-400">0%</span>
+            </div>
+            <span class="text-[11px] text-slate-500">Pintasan: Tekan Ctrl + Enter</span>
+          </div>
+        </div>
+
+        <!-- Right Editor: Paraphrased Result & Diff -->
+        <div class="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-3 border-b border-dark-border">
+              <span class="text-xs font-bold tracking-wider text-brand-400 uppercase flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span>
+                <span>Hasil Parafrase (Diff Highlight)</span>
+              </span>
+              
+              <div class="flex items-center space-x-2">
+                <!-- Variasi Lain Button -->
+                <button id="btnRegeneratePara" title="Acak kembali sinonim untuk hasil berbeda" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-dark-input hover:bg-dark-hover text-brand-300 border border-dark-border transition flex items-center space-x-1.5">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                  <span>Variasi Lain</span>
+                </button>
+
+                <!-- Copy Button -->
+                <button id="btnCopyParaResult" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-600/20 hover:bg-brand-600 text-brand-300 hover:text-white border border-brand-500/30 transition flex items-center space-x-1.5">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                  <span id="copyBtnLabel">Salin</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Paraphrased Content Container -->
+            <div id="paraResultOutput" class="mt-4 bg-dark-input text-slate-100 text-sm border border-dark-border rounded-xl p-4 overflow-y-auto min-h-[280px] max-h-[380px] leading-relaxed select-text">
+              <span class="text-slate-500 italic">Hasil penulisan ulang dengan variasi kosa kata baru akan muncul di sini...</span>
+            </div>
+          </div>
+
+          <!-- Comparison Metrics Footer -->
+          <div class="mt-4 pt-3 border-t border-dark-border flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div class="flex items-center space-x-3">
+              <div>
+                <span class="text-slate-400">Penurunan AI:</span>
+                <span id="badgeAiDrop" class="ml-1 px-2.5 py-0.5 rounded-md font-bold bg-dark-input text-emerald-400 border border-emerald-500/30">
+                  -0% (Kini 0%)
+                </span>
+              </div>
+              <div class="text-slate-400" id="badgeWordShift">
+                0 frasa disesuaikan
+              </div>
+            </div>
+
+            <button id="btnSendResultToAnalyzer" class="text-brand-accent hover:text-brand-300 font-semibold underline text-xs transition">
+              Kirim ke Analyzer &rarr;
+            </button>
           </div>
         </div>
 
       </div>
 
-      <div class="lg:col-span-5 flex flex-col space-y-4">
+    </section>
+
+    <section id="viewAnalyzer" class="hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        <!-- Summary Stats Metrics -->
-        <div class="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-xl">
-          <div class="flex items-center justify-between pb-3 border-b border-dark-border/60">
-            <span class="text-xs font-bold tracking-wider text-slate-400 uppercase">Ringkasan Analisis Heuristik</span>
-            <span id="analysisTimestamp" class="text-[11px] text-slate-500 font-mono-code">Menunggu data...</span>
-          </div>
-
-          <div class="grid grid-cols-2 gap-3 mt-4">
-            
-            <!-- AI Probability Gauge Card -->
-            <div class="bg-dark-input border border-dark-border rounded-xl p-4 flex flex-col justify-between">
-              <div>
-                <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Kebarangkalian AI</div>
-                <div class="flex items-baseline space-x-2 mt-1">
-                  <span id="metricAi" class="text-3xl font-black text-white">0%</span>
-                  <span id="metricAiLabel" class="text-xs px-2 py-0.5 rounded font-bold bg-slate-800 text-slate-400">Neutral</span>
-                </div>
-              </div>
-              <div class="w-full bg-slate-800 rounded-full h-2 mt-3 overflow-hidden">
-                <div id="barAi" class="bg-brand-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+        <!-- Left: Text Input & Dropzone -->
+        <div class="lg:col-span-7 flex flex-col space-y-4">
+          <div class="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-xl">
+            <div class="flex items-center justify-between pb-3 border-b border-dark-border">
+              <span class="text-xs font-bold tracking-wider text-slate-400 uppercase">Input Teks / Dokumen</span>
+              <div class="flex items-center space-x-2 text-xs">
+                <button id="btnSampleAnalyzer" class="text-brand-accent hover:text-brand-300 px-2.5 py-1 rounded-lg bg-brand-500/10 border border-brand-500/20">Sampel</button>
+                <button id="btnClearAnalyzer" class="text-slate-500 hover:text-rose-400 px-2.5 py-1">Hapus</button>
               </div>
             </div>
 
-            <!-- Similarity / Repetition Card -->
-            <div class="bg-dark-input border border-dark-border rounded-xl p-4 flex flex-col justify-between">
-              <div>
-                <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Indeks Pengulangan</div>
-                <div class="flex items-baseline space-x-2 mt-1">
-                  <span id="metricSim" class="text-3xl font-black text-white">0%</span>
-                  <span id="metricSimLabel" class="text-xs px-2 py-0.5 rounded font-bold bg-slate-800 text-slate-400">Rendah</span>
-                </div>
-              </div>
-              <div class="w-full bg-slate-800 rounded-full h-2 mt-3 overflow-hidden">
-                <div id="barSim" class="bg-cyan-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+            <textarea id="analyzerInputArea" rows="11" class="w-full mt-4 bg-dark-input text-slate-100 placeholder-slate-500 text-sm border border-dark-border rounded-xl p-4 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition resize-y leading-relaxed" placeholder="Tempelkan dokumen atau artikel untuk dianalisis probabilitas AI dan struktur pengulangannya..."></textarea>
+
+            <!-- Document Drag and Drop -->
+            <div id="dropZoneContainer" class="mt-4 border-2 border-dashed border-dark-border hover:border-brand-500/60 rounded-xl p-4 text-center cursor-pointer transition bg-dark-input/40 group">
+              <input type="file" id="fileDocInput" class="hidden" accept=".txt,.pdf,.docx">
+              <div class="flex flex-col items-center justify-center space-y-1">
+                <svg class="w-7 h-7 text-slate-500 group-hover:text-brand-accent transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                <p id="labelUploadedFileName" class="text-xs text-slate-300 font-medium">Unggah atau seret file PDF, DOCX, atau TXT ke sini</p>
+                <p class="text-[10px] text-slate-500">Diproses secara lokal di browser Anda (Maksimal 15 MB)</p>
               </div>
             </div>
 
-          </div>
-
-          <!-- Secondary Metrics -->
-          <div class="grid grid-cols-3 gap-2 mt-3 text-center">
-            <div class="p-2.5 rounded-lg bg-dark-input/60 border border-dark-border/40">
-              <div class="text-[11px] text-slate-400">Perkataan</div>
-              <div id="metricWords" class="text-lg font-bold text-slate-200 mt-0.5">0</div>
-            </div>
-            <div class="p-2.5 rounded-lg bg-dark-input/60 border border-dark-border/40">
-              <div class="text-[11px] text-slate-400">Ayat</div>
-              <div id="metricSentences" class="text-lg font-bold text-slate-200 mt-0.5">0</div>
-            </div>
-            <div class="p-2.5 rounded-lg bg-dark-input/60 border border-dark-border/40">
-              <div class="text-[11px] text-slate-400">Masa Baca</div>
-              <div id="metricReadingTime" class="text-lg font-bold text-slate-200 mt-0.5">0 mnt</div>
+            <div class="mt-4 pt-3 border-t border-dark-border flex items-center justify-between">
+              <span id="analyzerProgressStatus" class="text-xs text-slate-400 italic">Dokumen siap dianalisis.</span>
+              <button id="btnRunAnalyzer" class="px-6 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs sm:text-sm tracking-wide shadow-lg shadow-brand-600/30 transition">
+                Jalankan Analisis Teks
+              </button>
             </div>
           </div>
-
-          <!-- Heuristic Parameters Info Accordion -->
-          <div class="mt-4 pt-3 border-t border-dark-border/60">
-            <details class="text-xs text-slate-400">
-              <summary class="cursor-pointer hover:text-brand-300 font-medium select-none flex items-center justify-between">
-                <span>Konfigurasi & Kaedah Pengiraan</span>
-                <span class="text-[10px] text-slate-500">Info Heuristik ▾</span>
-              </summary>
-              <div class="mt-2 text-[11px] text-slate-400 space-y-1 bg-dark-input/40 p-2.5 rounded-lg border border-dark-border/40">
-                <p>• <strong>AI Heuristic:</strong> Mengira purata panjang ayat, kepelbagaian kosa kata (Type-Token Ratio), dan peratusan ayat kompleks (>30 perkataan).</p>
-                <p>• <strong>Similarity:</strong> Menilai kepadatan ulangan perkataan dalam teks.</p>
-                <p>• <em>Nota: Ini merupakan alat pembantu awal berasaskan heuristik dan algoritma statistik teks.</em></p>
-              </div>
-            </details>
-          </div>
-
         </div>
 
-        <div class="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-xl flex flex-col flex-1">
-          <div class="flex items-center justify-between pb-3 border-b border-dark-border/60">
-            <span class="text-xs font-bold tracking-wider text-slate-400 uppercase">Pecahan Per-Perenggan</span>
-            <span id="paragraphBadgeCount" class="text-xs px-2 py-0.5 rounded-full bg-dark-input border border-dark-border text-slate-400">0 perenggan</span>
-          </div>
+        <!-- Right: Scores & Paragraph Breakdown -->
+        <div class="lg:col-span-5 flex flex-col space-y-4">
+          
+          <!-- Metric Score Cards -->
+          <div class="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-xl">
+            <div class="flex items-center justify-between pb-3 border-b border-dark-border">
+              <span class="text-xs font-bold tracking-wider text-slate-400 uppercase">Ringkasan Skor & Probabilitas</span>
+              <span id="statTimestamp" class="text-[11px] text-slate-500 font-mono-code">-</span>
+            </div>
 
-          <!-- Paragraphs list with custom styling -->
-          <div id="paragraphList" class="mt-3 space-y-3 max-h-[460px] overflow-y-auto pr-1">
-            <div class="text-center py-12 text-slate-500 text-xs">
-              <svg class="w-8 h-8 mx-auto mb-2 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-              Sila masukkan teks dan klik <strong>Analisis Teks</strong> untuk melihat pecahan indikasi setiap perenggan.
+            <div class="grid grid-cols-2 gap-3 mt-4">
+              <!-- AI Probability Card -->
+              <div class="bg-dark-input border border-dark-border rounded-xl p-3.5 flex flex-col justify-between">
+                <div>
+                  <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">AI Probability</div>
+                  <div class="flex items-baseline space-x-2 mt-1">
+                    <span id="metricAiProbability" class="text-3xl font-black text-white">0%</span>
+                    <span id="badgeAiStatus" class="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-800 text-slate-400">Netral</span>
+                  </div>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-1.5 mt-3 overflow-hidden">
+                  <div id="barAiProbability" class="bg-brand-500 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <!-- Heuristic Similarity Card -->
+              <div class="bg-dark-input border border-dark-border rounded-xl p-3.5 flex flex-col justify-between">
+                <div>
+                  <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Heuristic Repetition</div>
+                  <div class="flex items-baseline space-x-2 mt-1">
+                    <span id="metricSimilarity" class="text-3xl font-black text-white">0%</span>
+                    <span id="badgeSimilarityStatus" class="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-800 text-slate-400">Normal</span>
+                  </div>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-1.5 mt-3 overflow-hidden">
+                  <div id="barSimilarity" class="bg-cyan-500 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Detailed Numeric Metrics -->
+            <div class="grid grid-cols-4 gap-2 mt-3 text-center">
+              <div class="p-2 rounded-xl bg-dark-input/60 border border-dark-border/40">
+                <div class="text-[10px] text-slate-400">Kata</div>
+                <div id="metricWordCount" class="text-sm font-bold text-slate-200">0</div>
+              </div>
+              <div class="p-2 rounded-xl bg-dark-input/60 border border-dark-border/40">
+                <div class="text-[10px] text-slate-400">Karakter</div>
+                <div id="metricCharCount" class="text-sm font-bold text-slate-200">0</div>
+              </div>
+              <div class="p-2 rounded-xl bg-dark-input/60 border border-dark-border/40">
+                <div class="text-[10px] text-slate-400">Kalimat</div>
+                <div id="metricSentenceCount" class="text-sm font-bold text-slate-200">0</div>
+              </div>
+              <div class="p-2 rounded-xl bg-dark-input/60 border border-dark-border/40">
+                <div class="text-[10px] text-slate-400">Waktu Baca</div>
+                <div id="metricReadingTime" class="text-sm font-bold text-slate-200">0 mnt</div>
+              </div>
             </div>
           </div>
+
+          <!-- Paragraph Breakdown Accordion/List -->
+          <div class="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-xl flex flex-col">
+            <div class="flex items-center justify-between pb-3 border-b border-dark-border">
+              <span class="text-xs font-bold tracking-wider text-slate-400 uppercase">Rincian Per Paragraf</span>
+              <span id="metricParagraphCount" class="text-xs text-slate-400">0 Paragraf</span>
+            </div>
+
+            <div id="paragraphResultsContainer" class="mt-3 space-y-2.5 max-h-[360px] overflow-y-auto pr-1">
+              <div class="text-center py-10 text-slate-500 text-xs">
+                Belum ada analisis. Masukkan teks dan tekan tombol <strong>Jalankan Analisis</strong>.
+              </div>
+            </div>
+          </div>
+
         </div>
 
       </div>
+    </section>
 
+    <div id="printableReport" class="hidden print-report-container p-6 bg-white text-slate-900">
+      <div class="border-b-2 border-slate-900 pb-4 mb-4">
+        <h1 class="text-2xl font-black">Laporan Audit Teks & Analisis AI</h1>
+        <p class="text-xs text-slate-500" id="printReportMeta"></p>
+      </div>
+
+      <div class="grid grid-cols-4 gap-4 mb-6">
+        <div class="p-3 border border-slate-300 rounded">
+          <div class="text-xs font-bold text-slate-500">AI PROBABILITY</div>
+          <div class="text-xl font-bold" id="printReportAi">-</div>
+        </div>
+        <div class="p-3 border border-slate-300 rounded">
+          <div class="text-xs font-bold text-slate-500">SIMILARITY/REPETITION</div>
+          <div class="text-xl font-bold" id="printReportRep">-</div>
+        </div>
+        <div class="p-3 border border-slate-300 rounded">
+          <div class="text-xs font-bold text-slate-500">TOTAL KATA</div>
+          <div class="text-xl font-bold" id="printReportWords">-</div>
+        </div>
+        <div class="p-3 border border-slate-300 rounded">
+          <div class="text-xs font-bold text-slate-500">TOTAL KALIMAT</div>
+          <div class="text-xl font-bold" id="printReportSentences">-</div>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <h3 class="font-bold text-sm mb-2 uppercase">Evaluasi Per Paragraf:</h3>
+        <div id="printReportParagraphs" class="space-y-3 text-xs leading-relaxed"></div>
+      </div>
     </div>
 
-    <!-- Print report header (only visible when printed) -->
-    <div class="hidden print-only mt-8 text-black">
-      <h2 class="text-2xl font-bold">Laporan Penuh TextCheck AI</h2>
-      <p class="text-sm text-gray-600" id="printReportMeta"></p>
-    </div>
   </main>
 
   <script>
-    // State application
-    let currentMode = 'analyze';
-    let loadedFileName = null;
+    // State Application
+    let storedGeminiKey = localStorage.getItem('TEXTCHECK_GEMINI_KEY') || '';
+    let currentParaphrasedText = '';
+    let currentOriginalText = '';
 
-    // Helper DOM shortcut
     const $ = id => document.getElementById(id);
 
-    // Initial PDF.js worker setup
-    if (window.pdfjsLib) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    // Initial Engine Status Update
+    function updateKeyBadgeUI() {
+      if (storedGeminiKey) {
+        $('keyBtnLabel').textContent = 'API Key (Aktif)';
+        $('activeModeBadge').textContent = 'Mesin: Gemini LLM + Heuristik Cerdas';
+        $('engineStatusLabel').textContent = 'Gemini AI + Local Engine';
+        $('engineStatusPill').className = 'flex items-center space-x-2 text-xs font-medium text-brand-400 bg-brand-950/40 border border-brand-500/30 px-3 py-1.5 rounded-full';
+      } else {
+        $('keyBtnLabel').textContent = 'Gemini API Key (Opsional)';
+        $('activeModeBadge').textContent = 'Mesin: Algoritma Sintaksis Lokal';
+        $('engineStatusLabel').textContent = 'Standalone Client Engine';
+        $('engineStatusPill').className = 'flex items-center space-x-2 text-xs font-medium text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-3 py-1.5 rounded-full';
+      }
     }
+    updateKeyBadgeUI();
 
-    /**
-     * Ekstraksi perkataan mengikut regex Unicode
-     */
-    function extractWords(text) {
-      if (!text) return [];
-      const matched = text.match(/[\p{L}\p{N}'-]+/gu);
-      return matched || [];
-    }
-
-    /**
-     * Pembahagian ayat mengikut tanda noktah
-     */
-    function extractSentences(text) {
-      if (!text) return [];
-      return text
-        .split(/(?<=[.!?])\s+/)
-        .map(s => s.trim())
-        .filter(s => s.length > 0);
-    }
-
-    /**
-     * Pembahagian perenggan mengikut dua enter atau enter tunggal
-     */
-    function extractParagraphs(text) {
-      if (!text) return [];
-      return text
-        .split(/\n\s*\n|\n/)
-        .map(p => p.trim())
-        .filter(p => p.length > 0);
-    }
-
-    /**
-     * Formula AI Heuristic (berdasarkan logik tepat backend FastAPI rujukan)
-     * Mengukur:
-     * 1. Purata panjang ayat
-     * 2. Kepelbagaian kosa kata (Type-Token Ratio / repetition)
-     * 3. Kekerapan ayat panjang (>30 perkataan)
-     */
-    function calculateAiHeuristic(text) {
-      const w = extractWords(text);
-      const s = extractSentences(text);
-      if (w.length === 0) return 0;
-
-      const avgWordsPerSentence = w.length / Math.max(s.length, 1);
-      
-      const lowerWords = w.map(x => x.toLowerCase());
-      const uniqueWords = new Set(lowerWords);
-      const repeatedRatio = 1 - (uniqueWords.size / w.length);
-      
-      const longSentencesCount = s.filter(sent => extractWords(sent).length > 30).length;
-      const longSentencesRatio = longSentencesCount / Math.max(s.length, 1);
-
-      // Formula exact backend TextCheck AI:
-      // score = 15 + min(35, avg * 0.8) + min(30, repeated * 100) + long_sentences * 20
-      const score = 15 + Math.min(35, avgWordsPerSentence * 0.8) + Math.min(30, repeatedRatio * 100) + (longSentencesRatio * 20);
-      
-      return Math.round(Math.max(1, Math.min(97, score)));
-    }
-
-    /**
-     * Formula Similarity Heuristic (berdasarkan backend FastAPI rujukan)
-     */
-    function calculateSimilarityHeuristic(text) {
-      const ws = extractWords(text).map(x => x.toLowerCase());
-      if (ws.length === 0) return 0;
-      
-      const uniqueWords = new Set(ws);
-      const repetition = 1 - (uniqueWords.size / ws.length);
-      
-      return Math.round(Math.max(1, Math.min(28, repetition * 42)));
-    }
-
-    /**
-     * Menjana label kategori indikasi AI
-     */
-    function getAiLabel(score) {
-      if (score >= 70) return { label: 'AI-like', color: 'bg-rose-500/20 text-rose-400 border-rose-500/30' };
-      if (score >= 40) return { label: 'Mixed', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' };
-      return { label: 'Human-like', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' };
-    }
-
-    const PARAPHRASE_DICT = {
+    // ==========================================
+    // EXTENSIVE INDONESIAN THESAURUS & SYNTAX RULES
+    // ==========================================
+    const INDO_THESAURUS = {
       academic: [
-        { regex: /\bsangat\b/gi, rep: "secara signifikan" },
-        { regex: /\bkarena\b/gi, rep: "disebabkan oleh" },
-        { regex: /\bmenunjukkan\b/gi, rep: "mengindikasikan" },
-        { regex: /\bmenemukan\b/gi, rep: "mengidentifikasi" },
-        { regex: /\bpenting\b/gi, rep: "esensial" },
-        { regex: /\bmenggunakan\b/gi, rep: "mengimplementasikan" },
-        { regex: /\bmasalah\b/gi, rep: "fenomena problematika" },
-        { regex: /\bcontohnya\b/gi, rep: "sebagai ilustrasi" },
-        { regex: /\bkesimpulannya\b/gi, rep: "berdasarkan inferensi tersebut" },
-        { regex: /\bbanyak\b/gi, rep: "sejumlah besar" },
-        { regex: /\bmembuat\b/gi, rep: "memformulasi" }
+        { pattern: /\bsangat\s+penting\b/gi, choices: ["sangat krusial", "memegang peranan esensial", "amat fundamental", "bersifat signifikatif"] },
+        { pattern: /\bpenting\b/gi, choices: ["krusial", "esensial", "fundamental", "signifikan", "berarti"] },
+        { pattern: /\bsangat\b/gi, choices: ["secara signifikan", "amat", "teramat", "substansial", "cukup mendalam"] },
+        { pattern: /\bkarena\b/gi, choices: ["disebabkan oleh faktor", "berlandaskan pada fakta bahwa", "terdorong oleh determinan", "mempertimbangkan bahwa"] },
+        { pattern: /\boleh karena itu\b/gi, choices: ["oleh sebab itu", "konsekuensinya", "dengan demikian", "maka dari itu", "atas dasar tersebut"] },
+        { pattern: /\bmenunjukkan\b/gi, choices: ["mengindikasikan", "memaparkan bukti bahwa", "merefleksikan", "mengonfirmasi", "memanifestasikan"] },
+        { pattern: /\bmenggunakan\b/gi, choices: ["mengaplikasikan", "mengutilisasi", "mendayagunakan", "mengimplementasikan"] },
+        { pattern: /\bmembuat\b/gi, choices: ["memformulasi", "mengonstruksi", "menghasilkan", "mengembangkan"] },
+        { pattern: /\bmenemukan\b/gi, choices: ["mengidentifikasi", "memperoleh simpulan", "menemukenali", "menyingkap temuan"] },
+        { pattern: /\bmasalah\b/gi, choices: ["problematika", "kendala metodologis", "anomali", "komplikasi fenomena"] },
+        { pattern: /\bbanyak\b/gi, choices: ["sejumlah besar", "beragam variasi", "rentetan", "mayoritas"] },
+        { pattern: /\bcontohnya\b/gi, choices: ["sebagai ilustrasi empiris", "sebagai representasi", "dalam hal ini"] },
+        { pattern: /\bkesimpulannya\b/gi, choices: ["berdasarkan inferensi tersebut", "secara konklusif", "sebagai sintesis akhir"] },
+        { pattern: /\bperkembangan\b/gi, choices: ["evolusi akseleratif", "progresivitas", "transformasi berkelanjutan"] },
+        { pattern: /\bmembantu\b/gi, choices: ["memfasilitasi", "memberikan kontribusi substansial terhadap", "mendukung akselerasi"] },
+        { pattern: /\bberdampak pada\b/gi, choices: ["memberikan implikasi nyata terhadap", "mempengaruhi dinamika", "bermuara pada"] },
+        { pattern: /\bpenelitian ini\b/gi, choices: ["studi komprehensif ini", "kajian empiris ini", "eksplorasi ilmiah ini"] },
+        { pattern: /\bmetode\b/gi, choices: ["metodologi", "prosedur pendekatan sistematis", "tata cara analisis"] },
+        { pattern: /\btujuan\b/gi, choices: ["objektif utama", "orientasi sasaran", "arah intensi"] },
+        { pattern: /\bmembuktikan\b/gi, choices: ["memvalidasi kebenaran", "mengukuhkan dalil bahwa", "menegaskan fakta"] }
       ],
+
       formal: [
-        { regex: /\bsangat\b/gi, rep: "amat" },
-        { regex: /\bkarena\b/gi, rep: "dikarenakan" },
-        { regex: /\bmenunjukkan\b/gi, rep: "memperlihatkan" },
-        { regex: /\bpenting\b/gi, rep: "krusial" },
-        { regex: /\bmenggunakan\b/gi, rep: "mendayagunakan" },
-        { regex: /\bmasalah\b/gi, rep: "kendala" },
-        { regex: /\bcontohnya\b/gi, rep: "umpamanya" },
-        { regex: /\bbantu\b/gi, rep: "fasilitasi" },
-        { regex: /\bmembuat\b/gi, rep: "menghasilkan" }
+        { pattern: /\bsangat\b/gi, choices: ["amat", "sungguh", "begitu"] },
+        { pattern: /\bkarena\b/gi, choices: ["oleh karena", "disebabkan", "mengingat"] },
+        { pattern: /\boleh karena itu\b/gi, choices: ["maka dari itu", "dengan demikian", "sehubungan dengan hal tersebut"] },
+        { pattern: /\bmenunjukkan\b/gi, choices: ["memperlihatkan", "menjelaskan", "menggambarkan"] },
+        { pattern: /\bmenggunakan\b/gi, choices: ["memanfaatkan", "menerapkan", "mengoperasikan"] },
+        { pattern: /\bmasalah\b/gi, choices: ["kendala", "hambatan", "persoalan"] },
+        { pattern: /\bmembantu\b/gi, choices: ["mempermudah", "mendukung pelaksanaan", "turut menyukseskan"] },
+        { pattern: /\bdalam rangka\b/gi, choices: ["guna tujuan", "untuk keperluan", "demi kelancaran"] },
+        { pattern: /\bnamun demikian\b/gi, choices: ["kendati begitu", "walaupun demikian", "akan tetapi"] },
+        { pattern: /\bmemberikan\b/gi, choices: ["menyampaikan", "menyalurkan", "menyediakan"] },
+        { pattern: /\bberkaitan dengan\b/gi, choices: ["berhubungan erat dengan", "menyangkut perihal", "mengenai"] },
+        { pattern: /\bcepat\b/gi, choices: ["segera", "tangkas", "dalam waktu singkat"] }
       ],
+
       natural: [
-        { regex: /\bsangat\b/gi, rep: "cukup" },
-        { regex: /\bmenunjukkan\b/gi, rep: "memperlihatkan" },
-        { regex: /\bdalam rangka\b/gi, rep: "untuk" },
-        { regex: /\bmerupakan\b/gi, rep: "ialah" },
-        { regex: /\bmenggunakan\b/gi, rep: "memakai" },
-        { regex: /\bmenyebabkan\b/gi, rep: "membawa kepada" },
-        { regex: /\bnamun demikian\b/gi, rep: "namun" },
-        { regex: /\bwalau bagaimanapun\b/gi, rep: "meskipun begitu" }
+        { pattern: /\bsangat\b/gi, choices: ["cukup", "benar-benar", "sungguh"] },
+        { pattern: /\bmenunjukkan\b/gi, choices: ["menampakkan", "memberi gambaran", "membuktikan"] },
+        { pattern: /\bmenggunakan\b/gi, choices: ["memakai", "mengandalkan"] },
+        { pattern: /\bwalau bagaimanapun\b/gi, choices: ["tetapi", "namun", "di samping itu"] },
+        { pattern: /\boleh sebab itu\b/gi, choices: ["makanya", "alhasil", "akibatnya"] },
+        { pattern: /\bmemerlukan\b/gi, choices: ["butuh", "menuntut adanya", "perlu"] },
+        { pattern: /\bmemperoleh\b/gi, choices: ["mendapatkan", "meraih"] },
+        { pattern: /\bhal ini disebabkan\b/gi, choices: ["ini terjadi karena", "alasannya adalah", "penyebabnya yaitu"] },
+        { pattern: /\bmerupakan\b/gi, choices: ["adalah", "termasuk salah satu", "jadi"] },
+        { pattern: /\bbisa\b/gi, choices: ["dapat", "mampu", "berpeluang untuk"] }
       ],
+
       simple: [
-        { regex: /\bmenunjukkan\b/gi, rep: "memperlihatkan" },
-        { regex: /\bmenggunakan\b/gi, rep: "memakai" },
-        { regex: /\bdalam rangka\b/gi, rep: "untuk" },
-        { regex: /\bsecara signifikan\b/gi, rep: "nyata" },
-        { regex: /\bmengindikasikan\b/gi, rep: "menandakan" },
-        { regex: /\bmelaksanakan\b/gi, rep: "menjalankan" },
-        { regex: /\bdikarenakan oleh fakta bahwa\b/gi, rep: "sebab" }
+        { pattern: /\bsecara signifikan\b/gi, choices: ["jelas", "nyata", "terlihat"] },
+        { pattern: /\bmengindikasikan\b/gi, choices: ["menandakan", "menunjukkan"] },
+        { pattern: /\bmengimplementasikan\b/gi, choices: ["memakai", "menjalankan", "menerapkan"] },
+        { pattern: /\bdikarenakan oleh\b/gi, choices: ["karena", "sebab"] },
+        { pattern: /\bberdasarkan pada\b/gi, choices: ["menurut", "dari"] },
+        { pattern: /\bmemfasilitasi\b/gi, choices: ["membantu", "memudahkan"] },
+        { pattern: /\bterminologi\b/gi, choices: ["istilah", "kata"] }
+      ],
+
+      creative: [
+        { pattern: /\bberkembang\b/gi, choices: ["bersemi mekar", "menghentak panggung dunia", "melesat pesat bagai kilat"] },
+        { pattern: /\bsangat penting\b/gi, choices: ["urat nadi utama", "kunci emas keberhasilan", "fondasi tak tergoyahkan"] },
+        { pattern: /\bmenimbulkan kekhawatiran\b/gi, choices: ["meniupkan bayang-bayang kegelisahan", "memicu tanda tanya mendalam"] },
+        { pattern: /\bpesat\b/gi, choices: ["seperti air bah mengalir deras", "tanpa rem", "begitu dramatis"] },
+        { pattern: /\bmasalah\b/gi, choices: ["jebakan kerikil tajam", "dinding rintangan", "teka-teki rumit"] }
       ]
     };
 
-    /**
-     * Enjin parafrasa pintar dengan pengesanan perubahan
-     */
-    function performParaphrase(text, style) {
-      const rules = PARAPHRASE_DICT[style] || PARAPHRASE_DICT.academic;
-      let result = text;
-      let changesCount = 0;
+    // Sentence clause restructure patterns (Discourse markers shifting)
+    const CLAUSE_RESTRUCTURERS = [
+      {
+        trigger: /^(namun demikian|akan tetapi|walaupun demikian),\s*/i,
+        substitutes: ["Di sisi lain yang berbeda, ", "Sebaliknya, jika ditelaah lebih lanjut, ", "Meskipun begitu, kenyataannya "]
+      },
+      {
+        trigger: /^(oleh karena itu|maka dari itu|oleh sebab itu),\s*/i,
+        substitutes: ["Berpijak pada dinamika tersebut, ", "Sebagai implikasi logis, ", "Rentetan peristiwa ini menuntut "]
+      },
+      {
+        trigger: /^(penelitian|kajian|studi)\s+(ini|tersebut)\s+menunjukkan bahwa\s*/i,
+        substitutes: ["Hasil observasi faktual memvalidasi bahwa ", "Bukti empiris menegaskan bahwa secara terukur, ", "Dapatan studi mengonfirmasi bahwa "]
+      },
+      {
+        trigger: /^(selain itu|di samping itu),\s*/i,
+        substitutes: ["Tidak kalah pentingnya, ", "Menyertai hal tersebut, ", "Dalam dimensi yang sejajar, "]
+      }
+    ];
 
-      rules.forEach(rule => {
-        const matches = result.match(rule.regex);
-        if (matches) {
-          changesCount += matches.length;
-          result = result.replace(rule.regex, rule.rep);
+    // Helper text processing
+    function extractWords(str) {
+      if (!str) return [];
+      return str.match(/[\p{L}\p{N}'-]+/gu) || [];
+    }
+
+    function extractSentences(str) {
+      if (!str) return [];
+      return str.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
+    }
+
+    function extractParagraphs(str) {
+      if (!str) return [];
+      return str.split(/\n\s*\n|\n/).map(p => p.trim()).filter(Boolean);
+    }
+
+    // Heuristic AI Probability Formula
+    function calculateAiProbability(text) {
+      const words = extractWords(text);
+      const sents = extractSentences(text);
+      if (words.length === 0) return 0;
+
+      const avgWordsPerSent = words.length / Math.max(sents.length, 1);
+      
+      const lower = words.map(w => w.toLowerCase());
+      const unique = new Set(lower);
+      const repetitionRatio = 1 - (unique.size / words.length);
+
+      // Sentences longer than 28 words (common AI pattern)
+      const complexSentRatio = sents.filter(s => extractWords(s).length > 28).length / Math.max(sents.length, 1);
+
+      // Sentence burstiness calculation (variance in length)
+      const lengths = sents.map(s => extractWords(s).length);
+      const mean = avgWordsPerSent;
+      const variance = lengths.reduce((acc, l) => acc + Math.pow(l - mean, 2), 0) / Math.max(lengths.length, 1);
+      const stdDev = Math.sqrt(variance);
+
+      // AI texts often have monotonous, flat sentence length variance (low burstiness)
+      const burstinessPenalty = stdDev < 4.2 ? 14 : (stdDev > 9 ? -9 : 0);
+
+      const rawScore = 15 + Math.min(30, avgWordsPerSent * 0.72) + Math.min(28, repetitionRatio * 105) + (complexSentRatio * 20) + burstinessPenalty;
+
+      return Math.round(Math.max(3, Math.min(97, rawScore)));
+    }
+
+    // Heuristic Similarity/Repetition score
+    function calculateSimilarity(text) {
+      const words = extractWords(text).map(w => w.toLowerCase());
+      if (words.length === 0) return 0;
+      const unique = new Set(words);
+      const repetition = 1 - (unique.size / words.length);
+      return Math.round(Math.max(1, Math.min(32, repetition * 48)));
+    }
+
+    function getAiClassification(score) {
+      if (score >= 70) return { label: 'Tinggi (AI-like)', cls: 'bg-rose-500/20 text-rose-400 border border-rose-500/30' };
+      if (score >= 40) return { label: 'Sedang (Mixed)', cls: 'bg-amber-500/20 text-amber-400 border border-amber-500/30' };
+      return { label: 'Rendah (Human-like)', cls: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' };
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+
+    function runLocalParaphrase(text, style, intensity) {
+      const dict = INDO_THESAURUS[style] || INDO_THESAURUS.natural;
+      const paragraphs = extractParagraphs(text);
+      let replacedCount = 0;
+
+      const results = paragraphs.map(p => {
+        let sentences = extractSentences(p);
+
+        // 1. Structure reorganization (Discourse Restructuring)
+        if (intensity === 'high' || intensity === 'medium') {
+          sentences = sentences.map(sent => {
+            let s = sent;
+            for (const restruct of CLAUSE_RESTRUCTURERS) {
+              if (restruct.trigger.test(s)) {
+                const pick = restruct.substitutes[Math.floor(Math.random() * restruct.substitutes.length)];
+                s = s.replace(restruct.trigger, pick);
+                replacedCount++;
+                break;
+              }
+            }
+            return s;
+          });
         }
+
+        let combined = sentences.join(' ');
+
+        // 2. Rich Dictionary Synonyms Replacement
+        dict.forEach(item => {
+          combined = combined.replace(item.pattern, (matched) => {
+            // Intensity filter: if low, only replace 50% of matches
+            if (intensity === 'low' && Math.random() > 0.5) return matched;
+            
+            const pick = item.choices[Math.floor(Math.random() * item.choices.length)];
+            replacedCount++;
+
+            // Preserve initial uppercase if applicable
+            if (matched[0] === matched[0].toUpperCase() && matched[0] !== matched[0].toLowerCase()) {
+              return pick.charAt(0).toUpperCase() + pick.slice(1);
+            }
+            return pick;
+          });
+        });
+
+        // 3. Syntactic smoothing
+        if (intensity === 'high') {
+          combined = combined
+            .replace(/\bhal ini karena\b/gi, () => { replacedCount++; return "kondisi ini muncul lantaran"; })
+            .replace(/\bdapat disimpulkan bahwa\b/gi, () => { replacedCount++; return "dapat digarisbawahi secara terang bahwa"; })
+            .replace(/\bseperti yang kita ketahui\b/gi, () => { replacedCount++; return "sebagaimana yang telah terbukti"; });
+        }
+
+        return combined;
       });
 
       return {
-        original: text,
-        paraphrased: result,
-        changesCount: changesCount,
-        style: style
+        rewrittenText: results.join('\n\n'),
+        changes: replacedCount
       };
     }
 
-    async function readUploadedFile(file) {
-      const ext = file.name.split('.').pop().toLowerCase();
+    // Call Gemini API LLM directly from user browser if key provided
+    async function runGeminiLLMParaphrase(text, style, intensity, apiKey) {
+      const prompt = `Anda adalah editor bahasa profesional. Tolong lakukan parafrase pada teks berbahasa Indonesia berikut.
+GAYA PENULISAN: ${style.toUpperCase()}
+INTENSITAS PERUBAHAN: ${intensity.toUpperCase()}
 
-      if (ext === 'txt') {
-        return await file.text();
+Instruksi khusus:
+1. Ubah struktur kalimat secara mendalam agar terasa alami (human-like) dan variatif.
+2. Hindari frasa klise robotik khas AI.
+3. Pertahankan substansi inti pesan tanpa menghilangkan fakta asli.
+4. Kembalikan HANYA teks hasil parafrase tanpa pengantar, tanpa salam pembuka, dan tanpa tanda kutip pembungkus.
+
+Teks Asli:
+${text}`;
+
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const payload = {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: intensity === 'high' ? 0.85 : 0.65
+        }
+      };
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorJson = await response.json().catch(() => ({}));
+        throw new Error(errorJson.error?.message || `Gagal menghubungi API Gemini (${response.status})`);
       }
 
-      if (ext === 'docx') {
-        if (!window.mammoth) {
-          throw new Error('Pustaka Mammoth.js gagal dimuatkan untuk membaca .docx.');
-        }
-        const arrayBuffer = await file.arrayBuffer();
-        const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
-        return result.value;
-      }
+      const resData = await response.json();
+      const output = resData.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!output) throw new Error("Respons teks dari Gemini kosong.");
 
-      if (ext === 'pdf') {
-        if (!window.pdfjsLib) {
-          throw new Error('Pustaka PDF.js belum bersedia.');
-        }
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        let fullText = '';
-
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          const pageText = textContent.items.map(item => item.str).join(' ');
-          fullText += pageText + '\n\n';
-        }
-
-        if (!fullText.trim()) {
-          throw new Error('PDF berjaya dibuka tetapi tiada teks ditemui (mungkin fail imbasan scan/gambar yang perlukan OCR).');
-        }
-        return fullText;
-      }
-
-      throw new Error('Format fail tidak disokong. Sila gunakan fail .txt, .docx, atau .pdf.');
+      return {
+        rewrittenText: output.trim(),
+        changes: Math.round(extractWords(text).length * 0.45)
+      };
     }
 
-    function updateLiveCounters() {
-      const val = $('inputText').value;
-      const chars = val.length;
-      const words = extractWords(val).length;
-      
-      $('liveCharCount').textContent = chars.toLocaleString();
-      $('liveWordCount').textContent = words.toLocaleString();
+    // Visual Diff Renderer
+    function renderDiffComparison(original, paraphrased) {
+      const origWords = new Set(extractWords(original).map(w => w.toLowerCase()));
+      const paragraphs = extractParagraphs(paraphrased);
+
+      return paragraphs.map(p => {
+        // Split by token boundaries preserving punctuation & spaces
+        const tokens = p.split(/(\s+|[.,!?;:()"])/);
+        const markedTokens = tokens.map(tok => {
+          const clean = tok.trim().toLowerCase();
+          if (clean.length > 2 && !origWords.has(clean) && /^[\p{L}\p{N}'-]+$/u.test(clean)) {
+            return `<span class="diff-changed" title="Kata/frasa baru">${escapeHtml(tok)}</span>`;
+          }
+          return escapeHtml(tok);
+        }).join('');
+        return `<p class="mb-3">${markedTokens}</p>`;
+      }).join('');
     }
 
-    function setStatus(msg, isError = false) {
-      const el = $('statusMessage');
-      el.textContent = msg;
-      if (isError) {
-        el.className = 'text-xs text-rose-400 font-medium truncate';
+    const SAMPLE_DOC = `Kecerdasan buatan telah berkembang dengan sangat pesat dalam era teknologi digital ini. Penggunaan algoritma pembelajaran mesin telah memberikan impak yang sangat penting dalam sektor kesihatan dan pendidikan. Banyak penyelidikan menunjukkan bahawa automasi mampu meningkatkan produktiviti kerja dengan ketara. Namun demikian, perkembangan ini turut menimbulkan masalah etika yang serius berkaitan privasi data. Oleh sebab itu, kita memerlukan garis panduan yang kukuh untuk memastikan sistem ini adil.`;
+
+    $('btnInsertSamplePara').addEventListener('click', () => {
+      $('paraInputArea').value = SAMPLE_DOC;
+      updateParaInputMetrics();
+    });
+
+    $('btnSampleAnalyzer').addEventListener('click', () => {
+      $('analyzerInputArea').value = SAMPLE_DOC;
+      $('btnRunAnalyzer').click();
+    });
+
+    $('btnClearParaInput').addEventListener('click', () => {
+      $('paraInputArea').value = '';
+      updateParaInputMetrics();
+      $('paraResultOutput').innerHTML = '<span class="text-slate-500 italic">Hasil penulisan ulang dengan variasi kosa kata baru akan muncul di sini...</span>';
+      $('badgeAiDrop').textContent = '-0% (Kini 0%)';
+      $('badgeWordShift').textContent = '0 frasa disesuaikan';
+    });
+
+    $('paraInputArea').addEventListener('input', updateParaInputMetrics);
+
+    function updateParaInputMetrics() {
+      const txt = $('paraInputArea').value;
+      const count = extractWords(txt).length;
+      $('labelParaInputWords').textContent = `${count} kata`;
+
+      if (txt.trim().length > 10) {
+        const score = calculateAiProbability(txt);
+        $('metricBeforeAi').textContent = `${score}%`;
       } else {
-        el.className = 'text-xs text-slate-400 italic truncate';
+        $('metricBeforeAi').textContent = '0%';
       }
     }
 
-    // Sample Text Template
-    const SAMPLE_TEXT = `Kecerdasan buatan (Artificial Intelligence) telah berkembang secara signifikan dalam dekad kebelakangan ini. Penggunaan algoritma pembelajaran mesin telah memberikan impak yang sangat besar dalam pelbagai sektor industri, termasuk kesihatan, pendidikan, dan kewangan. Penyelidikan menunjukkan bahawa adaptasi automasi mampu mengoptimumkan masa kerja dan meningkatkan produktiviti secara holistik.
+    // Execution Core for Paraphrase
+    async function triggerParaphraseExecution() {
+      const text = $('paraInputArea').value.trim();
+      if (!text) {
+        $('paraResultOutput').innerHTML = `<div class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs">Peringatan: Masukkan teks terlebih dahulu ke dalam kotak Teks Asli.</div>`;
+        return;
+      }
 
-Walau bagaimanapun, perkembangan pesat teknologi ini turut menimbulkan kebimbangan etika yang serius berkaitan privasi data dan keselamatan maklumat peribadi. Oleh sebab itu, para pembuat dasar perlu merangka garis panduan yang telus dan adil dalam rangka memastikan teknologi ini dimanfaatkan secara bertanggungjawab untuk kemaslahatan masyarakat umum.`;
+      const style = $('selectParaStyle').value;
+      const intensity = $('selectParaIntensity').value;
+      const btn = $('btnExecutePara');
+      const spinner = $('paraSpinnerIcon');
+      const btnLabel = $('paraBtnCaption');
 
-    $('btnSample').addEventListener('click', () => {
-      $('inputText').value = SAMPLE_TEXT;
-      updateLiveCounters();
-      setStatus('Teks sampel telah dimasukkan.');
+      btn.disabled = true;
+      spinner.classList.remove('hidden');
+      btnLabel.textContent = 'Memparafrase...';
+
+      try {
+        const initialAi = calculateAiProbability(text);
+        let resultData;
+
+        if (storedGeminiKey) {
+          resultData = await runGeminiLLMParaphrase(text, style, intensity, storedGeminiKey);
+        } else {
+          // Slight delay for fluid UX transition
+          await new Promise(r => setTimeout(r, 220));
+          resultData = runLocalParaphrase(text, style, intensity);
+        }
+
+        currentParaphrasedText = resultData.rewrittenText;
+        currentOriginalText = text;
+
+        // Render Highlighted Diff
+        const diffHtml = renderDiffComparison(text, resultData.rewrittenText);
+        $('paraResultOutput').innerHTML = diffHtml;
+
+        // Compute Metric Improvements
+        const newAi = calculateAiProbability(resultData.rewrittenText);
+        const drop = initialAi - newAi;
+
+        $('badgeAiDrop').textContent = drop > 0 ? `-${drop}% (Kini ${newAi}%)` : `Stabil (${newAi}%)`;
+        $('badgeWordShift').textContent = `${resultData.changes} frasa/kata disesuaikan`;
+
+      } catch (err) {
+        $('paraResultOutput').innerHTML = `<div class="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs"><strong>Gagal:</strong> ${escapeHtml(err.message)}</div>`;
+      } finally {
+        btn.disabled = false;
+        spinner.classList.add('hidden');
+        btnLabel.textContent = 'Parafrase Sekarang';
+      }
+    }
+
+    $('btnExecutePara').addEventListener('click', triggerParaphraseExecution);
+    $('btnRegeneratePara').addEventListener('click', () => {
+      if (!$('paraInputArea').value.trim()) return;
+      triggerParaphraseExecution();
     });
 
-    $('btnClear').addEventListener('click', () => {
-      $('inputText').value = '';
-      $('fileInput').value = '';
-      $('fileLabel').textContent = 'Klik atau seret fail dokumen ke sini';
-      loadedFileName = null;
-      updateLiveCounters();
-      resetMetrics();
-      setStatus('Ruang teks telah dikosongkan.');
+    // Copy to clipboard
+    $('btnCopyParaResult').addEventListener('click', () => {
+      if (!currentParaphrasedText) return;
+      const dummy = document.createElement("textarea");
+      document.body.appendChild(dummy);
+      dummy.value = currentParaphrasedText;
+      dummy.select();
+      document.execCommand("copy");
+      document.body.removeChild(dummy);
+
+      const label = $('copyBtnLabel');
+      const orig = label.textContent;
+      label.textContent = 'Tersalin!';
+      setTimeout(() => label.textContent = orig, 1500);
     });
 
-    function resetMetrics() {
-      $('metricAi').textContent = '0%';
-      $('barAi').style.width = '0%';
-      $('metricAiLabel').textContent = 'Neutral';
-      $('metricAiLabel').className = 'text-xs px-2 py-0.5 rounded font-bold bg-slate-800 text-slate-400';
-      
-      $('metricSim').textContent = '0%';
-      $('barSim').style.width = '0%';
-      $('metricWords').textContent = '0';
-      $('metricSentences').textContent = '0';
+    // Send to Analyzer tab
+    $('btnSendResultToAnalyzer').addEventListener('click', () => {
+      if (!currentParaphrasedText) return;
+      $('analyzerInputArea').value = currentParaphrasedText;
+      $('navTabAnalyzer').click();
+      $('btnRunAnalyzer').click();
+    });
+
+    // Ctrl + Enter shortcut
+    $('paraInputArea').addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        triggerParaphraseExecution();
+      }
+    });
+
+    $('navTabPara').addEventListener('click', () => {
+      $('viewParaphrase').classList.remove('hidden');
+      $('viewAnalyzer').classList.add('hidden');
+      $('navTabPara').className = 'px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 bg-brand-600 text-white shadow-md shadow-brand-600/30 flex items-center space-x-2';
+      $('navTabAnalyzer').className = 'px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 text-slate-400 hover:text-white hover:bg-dark-hover flex items-center space-x-2';
+    });
+
+    $('navTabAnalyzer').addEventListener('click', () => {
+      $('viewAnalyzer').classList.remove('hidden');
+      $('viewParaphrase').classList.add('hidden');
+      $('navTabAnalyzer').className = 'px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 bg-brand-600 text-white shadow-md shadow-brand-600/30 flex items-center space-x-2';
+      $('navTabPara').className = 'px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 text-slate-400 hover:text-white hover:bg-dark-hover flex items-center space-x-2';
+    });
+
+    $('btnClearAnalyzer').addEventListener('click', () => {
+      $('analyzerInputArea').value = '';
+      $('fileDocInput').value = '';
+      $('labelUploadedFileName').textContent = 'Unggah atau seret file PDF, DOCX, atau TXT ke sini';
+      resetAnalyzerMetricsUI();
+    });
+
+    function resetAnalyzerMetricsUI() {
+      $('metricAiProbability').textContent = '0%';
+      $('barAiProbability').style.width = '0%';
+      $('badgeAiStatus').textContent = 'Netral';
+      $('badgeAiStatus').className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-slate-800 text-slate-400';
+
+      $('metricSimilarity').textContent = '0%';
+      $('barSimilarity').style.width = '0%';
+      $('badgeSimilarityStatus').textContent = 'Normal';
+
+      $('metricWordCount').textContent = '0';
+      $('metricCharCount').textContent = '0';
+      $('metricSentenceCount').textContent = '0';
       $('metricReadingTime').textContent = '0 mnt';
-      $('paragraphBadgeCount').textContent = '0 perenggan';
-      
-      $('paragraphList').innerHTML = `
-        <div class="text-center py-12 text-slate-500 text-xs">
-          <svg class="w-8 h-8 mx-auto mb-2 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-          Sila masukkan teks dan klik <strong>Analisis Teks</strong> untuk melihat pecahan indikasi setiap perenggan.
+      $('metricParagraphCount').textContent = '0 Paragraf';
+      $('statTimestamp').textContent = '-';
+
+      $('paragraphResultsContainer').innerHTML = `
+        <div class="text-center py-10 text-slate-500 text-xs">
+          Belum ada analisis. Masukkan teks dan tekan tombol <strong>Jalankan Analisis</strong>.
         </div>
       `;
     }
 
-    // Tab Management
-    $('tabAnalyze').addEventListener('click', () => {
-      currentMode = 'analyze';
-      $('tabAnalyze').className = 'tab-btn px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 bg-brand-600 text-white shadow-lg shadow-brand-600/30 flex items-center space-x-2';
-      $('tabParaphrase').className = 'tab-btn px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 text-slate-400 hover:text-white hover:bg-dark-hover flex items-center space-x-2';
-      
-      $('paraphraseOptions').classList.add('hidden');
-      $('paraphraseResultCard').classList.add('hidden');
-      $('btnText').textContent = 'Analisis Teks';
-      setStatus('Mod Penganalisis aktif.');
+    // Execute Analyzer
+    $('btnRunAnalyzer').addEventListener('click', () => {
+      const text = $('analyzerInputArea').value.trim();
+      if (!text) {
+        $('analyzerProgressStatus').textContent = 'Silakan masukkan teks atau pilih file terlebih dahulu.';
+        $('analyzerProgressStatus').className = 'text-xs text-rose-400';
+        return;
+      }
+
+      $('analyzerProgressStatus').textContent = 'Menganalisis indikator teks...';
+      $('analyzerProgressStatus').className = 'text-xs text-slate-400 italic';
+
+      const words = extractWords(text);
+      const sentences = extractSentences(text);
+      const paragraphs = extractParagraphs(text);
+
+      const paragraphBreakdown = paragraphs.map((p, idx) => {
+        const ai = calculateAiProbability(p);
+        const sim = calculateSimilarity(p);
+        const classif = getAiClassification(ai);
+        return { index: idx + 1, text: p, ai, sim, classif };
+      });
+
+      const avgAi = Math.round(paragraphBreakdown.reduce((sum, item) => sum + item.ai, 0) / paragraphBreakdown.length);
+      const avgSim = Math.round(paragraphBreakdown.reduce((sum, item) => sum + item.sim, 0) / paragraphBreakdown.length);
+      const overallClassif = getAiClassification(avgAi);
+
+      // Update UI Metrics
+      $('metricAiProbability').textContent = `${avgAi}%`;
+      $('barAiProbability').style.width = `${avgAi}%`;
+      $('badgeAiStatus').textContent = overallClassif.label;
+      $('badgeAiStatus').className = `text-[10px] px-2 py-0.5 rounded font-bold ${overallClassif.cls}`;
+
+      $('metricSimilarity').textContent = `${avgSim}%`;
+      $('barSimilarity').style.width = `${Math.min(100, avgSim * 3.5)}%`;
+      $('badgeSimilarityStatus').textContent = avgSim > 18 ? 'Tinggi' : 'Normal';
+
+      $('metricWordCount').textContent = words.length.toLocaleString('id-ID');
+      $('metricCharCount').textContent = text.length.toLocaleString('id-ID');
+      $('metricSentenceCount').textContent = sentences.length.toLocaleString('id-ID');
+      $('metricReadingTime').textContent = `${Math.max(1, Math.ceil(words.length / 200))} mnt`;
+      $('metricParagraphCount').textContent = `${paragraphs.length} Paragraf`;
+      $('statTimestamp').textContent = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+      // Render Paragraph Cards
+      const container = $('paragraphResultsContainer');
+      container.innerHTML = '';
+
+      const printContainer = $('printReportParagraphs');
+      printContainer.innerHTML = '';
+
+      paragraphBreakdown.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'p-3.5 rounded-xl border border-dark-border bg-dark-input hover:border-brand-500/40 transition flex flex-col space-y-2';
+        card.innerHTML = `
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-slate-300">Paragraf ${item.index}</span>
+            <div class="flex items-center space-x-1.5">
+              <span class="px-2 py-0.5 rounded text-[10px] font-semibold ${item.classif.cls}">AI: ${item.ai}%</span>
+              <span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400 border border-slate-700">Repetisi: ${item.sim}%</span>
+            </div>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">${escapeHtml(item.text)}</p>
+        `;
+        container.appendChild(card);
+
+        // Append to Print Container
+        const printItem = document.createElement('div');
+        printItem.className = 'report-card';
+        printItem.innerHTML = `
+          <div class="flex justify-between font-bold mb-1">
+            <span>Paragraf ${item.index}</span>
+            <span>AI Probability: ${item.ai}% | Repetisi: ${item.sim}%</span>
+          </div>
+          <p>${escapeHtml(item.text)}</p>
+        `;
+        printContainer.appendChild(printItem);
+      });
+
+      $('analyzerProgressStatus').textContent = 'Analisis selesai.';
+      $('analyzerProgressStatus').className = 'text-xs text-emerald-400';
+
+      // Update Print Report Headers
+      $('printReportMeta').textContent = `Dianalisis pada ${new Date().toLocaleString('id-ID')} | TextCheck AI Pro Standalone Engine`;
+      $('printReportAi').textContent = `${avgAi}% (${overallClassif.label})`;
+      $('printReportRep').textContent = `${avgSim}%`;
+      $('printReportWords').textContent = words.length.toLocaleString('id-ID');
+      $('printReportSentences').textContent = sentences.length.toLocaleString('id-ID');
     });
 
-    $('tabParaphrase').addEventListener('click', () => {
-      currentMode = 'paraphrase';
-      $('tabParaphrase').className = 'tab-btn px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 bg-brand-600 text-white shadow-lg shadow-brand-600/30 flex items-center space-x-2';
-      $('tabAnalyze').className = 'tab-btn px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 text-slate-400 hover:text-white hover:bg-dark-hover flex items-center space-x-2';
-      
-      $('paraphraseOptions').classList.remove('hidden');
-      $('paraphraseResultCard').classList.remove('hidden');
-      $('btnText').textContent = 'Mula Parafrasa';
-      setStatus('Mod Parafrasa Pintar aktif.');
-    });
-
-    // File Drag & Drop Handlers
-    const dropZone = $('dropZone');
-    const fileInput = $('fileInput');
+    const dropZone = $('dropZoneContainer');
+    const fileInput = $('fileDocInput');
 
     dropZone.addEventListener('click', () => fileInput.click());
 
@@ -641,228 +1049,111 @@ Walau bagaimanapun, perkembangan pesat teknologi ini turut menimbulkan kebimbang
       dropZone.classList.add('border-brand-500', 'bg-dark-hover');
     });
 
-    ['dragleave', 'dragend'].forEach(type => {
-      dropZone.addEventListener(type, () => {
+    ['dragleave', 'dragend'].forEach(ev => {
+      dropZone.addEventListener(ev, () => {
         dropZone.classList.remove('border-brand-500', 'bg-dark-hover');
       });
     });
 
-    dropZone.addEventListener('drop', async (e) => {
+    dropZone.addEventListener('drop', (e) => {
       e.preventDefault();
       dropZone.classList.remove('border-brand-500', 'bg-dark-hover');
       if (e.dataTransfer.files.length > 0) {
-        handleFile(e.dataTransfer.files[0]);
+        handleDocumentFile(e.dataTransfer.files[0]);
       }
     });
 
     fileInput.addEventListener('change', (e) => {
       if (e.target.files.length > 0) {
-        handleFile(e.target.files[0]);
+        handleDocumentFile(e.target.files[0]);
       }
     });
 
-    async function handleFile(file) {
+    async function handleDocumentFile(file) {
       if (file.size > 15 * 1024 * 1024) {
-        setStatus('Saiz fail melebihi had 15 MB.', true);
-        return;
-      }
-      
-      setStatus(`Membaca fail: ${file.name}...`);
-      $('fileLabel').textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
-      
-      try {
-        const text = await readUploadedFile(file);
-        $('inputText').value = text;
-        loadedFileName = file.name;
-        updateLiveCounters();
-        setStatus(`Fail "${file.name}" berjaya dimuatkan ke editor.`);
-      } catch (err) {
-        setStatus(err.message || 'Gagal membaca kandungan fail.', true);
-      }
-    }
-
-    $('inputText').addEventListener('input', updateLiveCounters);
-
-    function renderAnalysisResults(text) {
-      const words = extractWords(text);
-      const sentences = extractSentences(text);
-      const paragraphs = extractParagraphs(text);
-
-      if (paragraphs.length === 0) {
-        throw new Error('Sila masukkan teks yang sah untuk dianalisis.');
-      }
-
-      // Analisis setiap perenggan
-      const paragraphData = paragraphs.map((p, index) => {
-        const aiScore = calculateAiHeuristic(p);
-        const simScore = calculateSimilarityHeuristic(p);
-        const labelObj = getAiLabel(aiScore);
-
-        return {
-          index: index + 1,
-          text: p,
-          aiScore: aiScore,
-          similarity: simScore,
-          label: labelObj.label,
-          labelClass: labelObj.color
-        };
-      });
-
-      // Purata keseluruhan
-      const avgAi = Math.round(paragraphData.reduce((acc, curr) => acc + curr.aiScore, 0) / paragraphData.length);
-      const avgSim = Math.round(paragraphData.reduce((acc, curr) => acc + curr.similarity, 0) / paragraphData.length);
-      const overallAiLabel = getAiLabel(avgAi);
-
-      // Anggaran masa membaca (200 perkataan seminit)
-      const readingMinutes = Math.max(1, Math.ceil(words.length / 200));
-
-      // Update UI Metrics
-      $('metricAi').textContent = `${avgAi}%`;
-      $('barAi').style.width = `${avgAi}%`;
-      
-      // Dynamic color for gauge
-      if (avgAi >= 70) {
-        $('barAi').className = 'bg-rose-500 h-2 rounded-full transition-all duration-500';
-      } else if (avgAi >= 40) {
-        $('barAi').className = 'bg-amber-500 h-2 rounded-full transition-all duration-500';
-      } else {
-        $('barAi').className = 'bg-emerald-500 h-2 rounded-full transition-all duration-500';
-      }
-
-      $('metricAiLabel').textContent = overallAiLabel.label;
-      $('metricAiLabel').className = `text-xs px-2 py-0.5 rounded font-bold border ${overallAiLabel.color}`;
-
-      $('metricSim').textContent = `${avgSim}%`;
-      $('barSim').style.width = `${Math.min(100, avgSim * 4)}%`;
-      $('metricSimLabel').textContent = avgSim > 15 ? 'Ketara' : 'Normal';
-      $('metricSimLabel').className = avgSim > 15 
-        ? 'text-xs px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30'
-        : 'text-xs px-2 py-0.5 rounded font-bold bg-slate-800 text-slate-400';
-
-      $('metricWords').textContent = words.length.toLocaleString();
-      $('metricSentences').textContent = sentences.length.toLocaleString();
-      $('metricReadingTime').textContent = `${readingMinutes} mnt`;
-
-      $('paragraphBadgeCount').textContent = `${paragraphs.length} perenggan`;
-      $('analysisTimestamp').textContent = new Date().toLocaleTimeString();
-
-      // Render paragraph cards
-      const container = $('paragraphList');
-      container.innerHTML = '';
-
-      paragraphData.forEach(p => {
-        const div = document.createElement('div');
-        div.className = 'p-3.5 rounded-xl border border-dark-border bg-dark-input hover:border-brand-500/40 transition flex flex-col space-y-2';
-
-        div.innerHTML = `
-          <div class="flex items-center justify-between text-xs">
-            <span class="font-bold text-slate-300">Perenggan ${p.index}</span>
-            <div class="flex items-center space-x-1.5">
-              <span class="px-2 py-0.5 rounded text-[11px] font-semibold border ${p.labelClass}">
-                AI: ${p.aiScore}% (${p.label})
-              </span>
-              <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">
-                Pengulangan: ${p.similarity}%
-              </span>
-            </div>
-          </div>
-          <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">${escapeHtml(p.text)}</p>
-        `;
-        container.appendChild(div);
-      });
-
-      // Update meta text for printing
-      $('printReportMeta').textContent = `Dianalisis pada ${new Date().toLocaleString()} | Jumlah Perkataan: ${words.length} | AI Score: ${avgAi}% (${overallAiLabel.label}) | Repetition Index: ${avgSim}%`;
-    }
-
-    function escapeHtml(string) {
-      const entityMap = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-      };
-      return String(string).replace(/[&<>"']/g, s => entityMap[s]);
-    }
-
-    $('btnExecute').addEventListener('click', async () => {
-      const text = $('inputText').value.trim();
-
-      if (!text) {
-        setStatus('Sila masukkan atau muat naik dokumen teks terlebih dahulu.', true);
+        $('analyzerProgressStatus').textContent = 'Gagal: Ukuran file melebihi batas 15 MB.';
+        $('analyzerProgressStatus').className = 'text-xs text-rose-400';
         return;
       }
 
-      const btn = $('btnExecute');
-      const spinner = $('btnSpinner');
-      btn.disabled = true;
-      spinner.classList.remove('hidden');
+      $('labelUploadedFileName').textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+      $('analyzerProgressStatus').textContent = 'Mengekstrak teks dokumen di browser...';
+      $('analyzerProgressStatus').className = 'text-xs text-slate-300 italic';
 
       try {
-        if (currentMode === 'analyze') {
-          setStatus('Sedang menganalisis struktur tatabahasa & corak perkataan...');
-          // Small synthetic delay for smooth feel
-          await new Promise(r => setTimeout(r, 180));
-          renderAnalysisResults(text);
-          setStatus(`Analisis selesai berjaya (${loadedFileName ? loadedFileName : 'Teks Editor'}).`);
+        const ext = file.name.split('.').pop().toLowerCase();
+        let extractedText = '';
+
+        if (ext === 'txt') {
+          extractedText = await file.text();
+        } else if (ext === 'docx') {
+          const arrayBuffer = await file.arrayBuffer();
+          const mammothResult = await mammoth.extractRawText({ arrayBuffer });
+          extractedText = mammothResult.value;
+        } else if (ext === 'pdf') {
+          const arrayBuffer = await file.arrayBuffer();
+          const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+          for (let p = 1; p <= pdfDoc.numPages; p++) {
+            const page = await pdfDoc.getPage(p);
+            const content = await page.getTextContent();
+            extractedText += content.items.map(i => i.str).join(' ') + '\n\n';
+          }
         } else {
-          // Paraphrase mode
-          setStatus('Sedang menstruktur semula teks mengikut gaya yang dipilih...');
-          await new Promise(r => setTimeout(r, 220));
-          
-          const selectedStyle = $('paraphraseStyle').value;
-          const paraResult = performParaphrase(text, selectedStyle);
-
-          $('paraphraseOutput').textContent = paraResult.paraphrased;
-          $('paraphraseChangesNote').textContent = `${paraResult.changesCount} frasa telah disesuaikan (${selectedStyle})`;
-          
-          setStatus(`Parafrasa selesai berjaya dengan gaya ${selectedStyle}.`);
+          throw new Error('Format file tidak didukung. Harap unggah file .pdf, .docx, atau .txt.');
         }
+
+        if (!extractedText.trim()) {
+          throw new Error('Dokumen terbaca namun tidak ada teks yang dapat diekstrak (kemungkinan scan gambar).');
+        }
+
+        $('analyzerInputArea').value = extractedText;
+        $('btnRunAnalyzer').click();
+
       } catch (err) {
-        setStatus(err.message || 'Ralat berlaku semasa pemprosesan.', true);
-      } finally {
-        btn.disabled = false;
-        spinner.classList.add('hidden');
+        $('analyzerProgressStatus').textContent = `Ralat: ${err.message}`;
+        $('analyzerProgressStatus').className = 'text-xs text-rose-400';
       }
+    }
+
+    $('btnOpenKeyModal').addEventListener('click', () => {
+      $('inputApiKey').value = storedGeminiKey;
+      $('modalKey').classList.remove('hidden');
     });
 
-    // Copy Paraphrase text
-    $('btnCopyParaphrase').addEventListener('click', () => {
-      const text = $('paraphraseOutput').textContent;
-      if (!text || text === 'Hasil penulisan semula akan dipaparkan di sini.') return;
-
-      const dummy = document.createElement("textarea");
-      document.body.appendChild(dummy);
-      dummy.value = text;
-      dummy.select();
-      document.execCommand("copy");
-      document.body.removeChild(dummy);
-
-      setStatus('Hasil parafrasa telah disalin ke papan klip (clipboard)!');
+    $('btnCloseKeyModal').addEventListener('click', () => {
+      $('modalKey').classList.add('hidden');
     });
 
-    // Apply Paraphrase to editor and run analyzer
-    $('btnApplyParaphrase').addEventListener('click', () => {
-      const text = $('paraphraseOutput').textContent;
-      if (!text || text === 'Hasil penulisan semula akan dipaparkan di sini.') return;
-
-      $('inputText').value = text;
-      updateLiveCounters();
-      $('tabAnalyze').click();
-      $('btnExecute').click();
+    $('btnCancelKey').addEventListener('click', () => {
+      $('modalKey').classList.add('hidden');
     });
 
-    // Print & PDF Export
-    $('btnPrint').addEventListener('click', () => {
+    $('btnSaveKey').addEventListener('click', () => {
+      const val = $('inputApiKey').value.trim();
+      storedGeminiKey = val;
+      localStorage.setItem('TEXTCHECK_GEMINI_KEY', val);
+      updateKeyBadgeUI();
+      $('modalKey').classList.add('hidden');
+    });
+
+    $('btnClearKey').addEventListener('click', () => {
+      storedGeminiKey = '';
+      localStorage.removeItem('TEXTCHECK_GEMINI_KEY');
+      $('inputApiKey').value = '';
+      updateKeyBadgeUI();
+      $('modalKey').classList.add('hidden');
+    });
+
+    // Print Report
+    $('btnPrintReport').addEventListener('click', () => {
+      const text = $('analyzerInputArea').value.trim();
+      if (!text) {
+        $('navTabAnalyzer').click();
+        $('analyzerProgressStatus').textContent = 'Lakukan analisis terlebih dahulu sebelum mencetak laporan.';
+        $('analyzerProgressStatus').className = 'text-xs text-amber-400';
+        return;
+      }
       window.print();
-    });
-
-    // Keyboard shortcut (Ctrl/Cmd + Enter to trigger run)
-    document.addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        $('btnExecute').click();
-      }
     });
   </script>
 </body>
