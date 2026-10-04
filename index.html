@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TextCheck AI - Smart Analyzer & Rewriter</title>
+  <title>TextCheck AI - Detektor & Mesin Parafrasa Cerdas</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- PDF.js CDN untuk ekstraksi dokumen PDF -->
+  <!-- PDF.js CDN untuk ekstraksi file PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <!-- Mammoth.js CDN untuk ekstraksi dokumen DOCX Word -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
@@ -24,14 +24,14 @@
               600: '#6d5dfc',
               700: '#5845eb',
               accent: '#8b7cff',
-              teal: '#14b8a6'
+              emerald: '#10b981'
             },
             dark: {
-              bg: '#0b1020',
+              bg: '#0a0f1d',
               card: '#11182c',
-              border: '#263052',
+              border: '#232f50',
               hover: '#1b2542',
-              input: '#0d1427'
+              input: '#0c1326'
             }
           }
         }
@@ -40,11 +40,11 @@
   </script>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
     
     body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      background-color: #0b1020;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background-color: #0a0f1d;
       color: #eef2ff;
       min-height: 100vh;
     }
@@ -54,33 +54,41 @@
     }
 
     ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+      width: 7px;
+      height: 7px;
     }
     ::-webkit-scrollbar-track {
-      background: #0b1020;
+      background: #0a0f1d;
     }
     ::-webkit-scrollbar-thumb {
-      background: #263052;
+      background: #232f50;
       border-radius: 9999px;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: #475569;
+      background: #3b4d79;
     }
 
-    /* Diff Visualizer styling */
-    .diff-changed {
-      background: rgba(109, 93, 252, 0.22);
-      color: #c4b5fd;
-      border-bottom: 2px solid #8b7cff;
+    /* Diff Visualizer Styling */
+    .diff-added {
+      background: rgba(16, 185, 129, 0.22);
+      color: #6ee7b7;
+      border-bottom: 2px solid #10b981;
       padding: 1px 4px;
       border-radius: 4px;
       font-weight: 600;
       transition: all 0.2s ease;
     }
-    .diff-changed:hover {
-      background: rgba(109, 93, 252, 0.45);
+    .diff-added:hover {
+      background: rgba(16, 185, 129, 0.4);
       color: #ffffff;
+    }
+    .diff-swapped {
+      background: rgba(139, 92, 246, 0.25);
+      color: #c4b5fd;
+      border-bottom: 2px solid #8b5cf6;
+      padding: 1px 4px;
+      border-radius: 4px;
+      font-weight: 600;
     }
 
     @media print {
@@ -93,12 +101,6 @@
       }
       .print-report-container {
         display: block !important;
-      }
-      .report-card {
-        border: 1px solid #cbd5e1 !important;
-        page-break-inside: avoid;
-        margin-bottom: 1rem;
-        padding: 1rem;
       }
     }
   </style>
@@ -113,45 +115,45 @@
         </div>
         <div>
           <span class="text-xl font-extrabold tracking-tight">TextCheck <span class="text-brand-accent">AI</span></span>
-          <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20 ml-2 hidden sm:inline-block">Client Pro v2.6</span>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 ml-2">v3.0 Ultra Rewriter</span>
         </div>
       </div>
       
       <div class="flex items-center space-x-2 sm:space-x-3">
         <!-- Status Engine Badge -->
-        <div id="engineStatusPill" class="flex items-center space-x-2 text-xs font-medium text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-3 py-1.5 rounded-full">
+        <div id="engineStatusPill" class="flex items-center space-x-2 text-xs font-semibold text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-3 py-1.5 rounded-full">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span class="hidden md:inline" id="engineStatusLabel">Local Rewriter Engine</span>
+          <span class="hidden md:inline" id="engineStatusLabel">Local Rewriter Engine (Aktif)</span>
         </div>
 
-        <!-- API Key Settings Button -->
-        <button id="btnOpenKeyModal" title="Konfigurasi Kunci API (Opsional)" class="p-2 text-slate-300 hover:text-white rounded-xl hover:bg-dark-hover border border-dark-border transition flex items-center space-x-1.5 text-xs">
+        <!-- Google Gemini API Key Setup -->
+        <button id="btnOpenKeyModal" title="Gunakan Gemini API Key untuk Hasil Neural LLM (Opsional)" class="p-2 text-slate-300 hover:text-white rounded-xl hover:bg-dark-hover border border-dark-border transition flex items-center space-x-1.5 text-xs">
           <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
           <span class="hidden sm:inline" id="keyBtnLabel">Gemini API Key</span>
         </button>
 
-        <!-- Export/Print Button -->
-        <button id="btnPrintReport" title="Cetak / Unduh PDF Laporan" class="p-2 text-slate-300 hover:text-white rounded-xl hover:bg-dark-hover border border-dark-border transition">
+        <!-- Print/Export PDF Button -->
+        <button id="btnPrintReport" title="Cetak / Simpan Laporan PDF" class="p-2 text-slate-300 hover:text-white rounded-xl hover:bg-dark-hover border border-dark-border transition">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
         </button>
       </div>
     </div>
   </nav>
 
-  <div id="modalKey" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+  <div id="modalKey" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-dark-card border border-dark-border rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
       <div class="flex items-center justify-between pb-3 border-b border-dark-border">
         <h3 class="font-bold text-white text-base flex items-center space-x-2">
-          <span>Pengaturan Gemini AI API (Opsional)</span>
+          <span>Koneksi Google Gemini API (Opsional)</span>
         </h3>
         <button id="btnCloseKeyModal" class="text-slate-400 hover:text-white text-xl leading-none">&times;</button>
       </div>
       
-      <p class="text-xs text-slate-400 mt-3 leading-relaxed">
-        Aplikasi ini <strong>sudah siap digunakan 100% gratis</strong> dengan mesin tesaurus algoritma internal tanpa perlu API Key.
+      <p class="text-xs text-slate-300 mt-3 leading-relaxed">
+        Aplikasi ini <strong>sudah berjalan 100% gratis</strong> menggunakan mesin algoritma sinonim & perombak klausa internal.
       </p>
       <p class="text-xs text-slate-400 mt-2 leading-relaxed">
-        Namun, jika Anda memiliki <strong>Google Gemini API Key</strong>, Anda dapat memasukkannya di bawah ini untuk mengaktifkan pemrosesan LLM tingkat lanjut. Kunci disimpan aman hanya di <code class="text-brand-300">localStorage</code> browser Anda.
+        Jika Anda menginginkan hasil parafrasa dengan model kecerdasan buatan Gemini AI (LLM), masukkan Gemini API Key gratis Anda. Kunci hanya tersimpan di browser Anda (<code class="text-brand-300">localStorage</code>).
       </p>
 
       <div class="mt-4">
@@ -171,18 +173,16 @@
 
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
     
-    <!-- Hero / Mode Switcher -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 no-print">
       <div>
         <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-          Pusat Analisis & Parafrasa Teks AI
+          Pusat Parafrasa & Analisis Teks AI
         </h1>
         <p class="mt-1 text-slate-400 text-xs sm:text-sm">
-          Deteksi probabilitas AI, analisa pengulangan kata, dan parafrasakan kalimat untuk hasil yang lebih alami dan akademis.
+          Tulis ulang kalimat berita, artikel, maupun skripsi agar lebih variatif, mengalir alami, dan minim repetisi.
         </p>
       </div>
 
-      <!-- Main Navigation Tabs -->
       <div class="flex items-center space-x-1.5 bg-dark-card p-1.5 rounded-2xl border border-dark-border w-fit shadow-md">
         <button id="navTabPara" class="px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 bg-brand-600 text-white shadow-md shadow-brand-600/30 flex items-center space-x-2">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
@@ -190,64 +190,61 @@
         </button>
         <button id="navTabAnalyzer" class="px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 text-slate-400 hover:text-white hover:bg-dark-hover flex items-center space-x-2">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-          <span>Penganalisis AI (Analyzer)</span>
+          <span>Penganalisis Teks & Dokumen</span>
         </button>
       </div>
     </div>
 
     <section id="viewParaphrase" class="space-y-6">
       
-      <!-- Paraphrase Controls Toolbar -->
+      <!-- Toolbar Controls -->
       <div class="bg-dark-card border border-dark-border rounded-2xl p-4 shadow-xl flex flex-wrap items-center justify-between gap-4">
         <div class="flex flex-wrap items-center gap-3">
           
-          <!-- Style Select -->
           <div class="flex items-center space-x-2">
-            <label class="text-xs font-semibold text-slate-400">Gaya:</label>
+            <label class="text-xs font-semibold text-slate-300">Gaya Teks:</label>
             <select id="selectParaStyle" class="bg-dark-input text-slate-200 text-xs border border-dark-border rounded-xl px-3 py-2 outline-none focus:border-brand-500 font-medium">
+              <option value="natural" selected>Natural & Mengalir (Berita/Umum)</option>
               <option value="academic">Akademik & Ilmiah (Jurnal/Skripsi)</option>
-              <option value="formal">Formal & Profesional (Dokumen Resmi)</option>
-              <option value="natural" selected>Natural & Mengalir (Humanis)</option>
-              <option value="simple">Ringkas & Padat (To-the-point)</option>
-              <option value="creative">Kreatif & Berbobot</option>
+              <option value="formal">Formal & Jurnalisme Resmi</option>
+              <option value="simple">Ringkas & Lugas (Padat)</option>
+              <option value="creative">Kreatif & Naratif</option>
             </select>
           </div>
 
-          <!-- Intensity Slider / Select -->
           <div class="flex items-center space-x-2">
-            <label class="text-xs font-semibold text-slate-400">Intensitas:</label>
+            <label class="text-xs font-semibold text-slate-300">Intensitas:</label>
             <select id="selectParaIntensity" class="bg-dark-input text-slate-200 text-xs border border-dark-border rounded-xl px-3 py-2 outline-none focus:border-brand-500 font-medium">
-              <option value="high" selected>Maksimal (Rombak Klausa & Sinonim Agresif)</option>
-              <option value="medium">Sedang (Variasi Frasa & Kosa Kata)</option>
-              <option value="low">Ringan (Penyesuaian Kata Dasar)</option>
+              <option value="extreme" selected>Maksimal (Rombak Klausa & Sinonim Agresif)</option>
+              <option value="high">Tinggi (Variasi Frasa & Kosa Kata Menyeluruh)</option>
+              <option value="medium">Sedang (Substitusi Sinonim Terpilih)</option>
             </select>
           </div>
 
-          <div class="hidden sm:flex items-center text-xs text-brand-400 bg-brand-500/10 border border-brand-500/20 px-3 py-1.5 rounded-xl">
-            <span id="activeModeBadge">Mesin: Algoritma Sintaksis Lokal</span>
+          <div class="hidden sm:flex items-center text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl font-medium">
+            <span id="activeModeBadge">Mesin: Algoritma Sintaksis Terintegrasi</span>
           </div>
         </div>
 
-        <!-- Action Buttons -->
         <div class="flex items-center space-x-2">
           <button id="btnInsertSamplePara" class="text-xs font-semibold text-brand-accent hover:text-brand-300 px-3.5 py-2 rounded-xl bg-brand-500/10 border border-brand-500/20 transition">
-            Sampel Teks
+            Sampel Kasus
           </button>
-          <button id="btnExecutePara" class="px-5 py-2 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm tracking-wide shadow-lg shadow-brand-600/30 active:scale-95 transition flex items-center space-x-2">
+          <button id="btnExecutePara" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm tracking-wide shadow-lg shadow-brand-600/30 active:scale-95 transition flex items-center space-x-2">
             <svg id="paraSpinnerIcon" class="w-4 h-4 animate-spin hidden" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-            <span id="paraBtnCaption">Parafrase Sekarang</span>
+            <span id="paraBtnCaption">Mulai Parafrasa</span>
           </button>
         </div>
       </div>
 
-      <!-- Side-by-side Dual Editor Grid -->
+      <!-- Dual Pane Editor -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
         
-        <!-- Left Editor: Input -->
+        <!-- Left: Original Area -->
         <div class="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-xl flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between pb-3 border-b border-dark-border">
-              <span class="text-xs font-bold tracking-wider text-slate-400 uppercase flex items-center space-x-2">
+              <span class="text-xs font-bold tracking-wider text-slate-300 uppercase flex items-center space-x-2">
                 <span class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
                 <span>Teks Asli</span>
               </span>
@@ -257,65 +254,60 @@
               </div>
             </div>
 
-            <textarea id="paraInputArea" rows="12" class="w-full mt-4 bg-dark-input text-slate-100 placeholder-slate-500 text-sm border border-dark-border rounded-xl p-4 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition resize-none leading-relaxed" placeholder="Ketik atau tempel teks yang ingin diparafrasakan di sini..."></textarea>
+            <textarea id="paraInputArea" rows="13" class="w-full mt-4 bg-dark-input text-slate-100 placeholder-slate-500 text-sm border border-dark-border rounded-xl p-4 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition resize-none leading-relaxed" placeholder="Ketik atau tempel teks yang ingin diparafrasakan di sini..."></textarea>
           </div>
 
-          <!-- Footer Metrik Sebelum -->
           <div class="mt-4 pt-3 border-t border-dark-border flex items-center justify-between text-xs text-slate-400">
             <div class="flex items-center space-x-2">
-              <span>Indikasi AI Awal:</span>
+              <span>Indikasi Pola AI Awal:</span>
               <span id="metricBeforeAi" class="font-bold text-amber-400">0%</span>
             </div>
-            <span class="text-[11px] text-slate-500">Pintasan: Tekan Ctrl + Enter</span>
+            <span class="text-[11px] text-slate-500">Pintasan: Tekan Ctrl + Enter untuk jalan</span>
           </div>
         </div>
 
-        <!-- Right Editor: Paraphrased Result & Diff -->
+        <!-- Right: Paraphrased Area with Highlight -->
         <div class="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-xl flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between pb-3 border-b border-dark-border">
-              <span class="text-xs font-bold tracking-wider text-brand-400 uppercase flex items-center space-x-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span>
-                <span>Hasil Parafrase (Diff Highlight)</span>
+              <span class="text-xs font-bold tracking-wider text-emerald-400 uppercase flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <span>Hasil Parafrasa (Perubahan Disorot)</span>
               </span>
               
               <div class="flex items-center space-x-2">
-                <!-- Variasi Lain Button -->
-                <button id="btnRegeneratePara" title="Acak kembali sinonim untuk hasil berbeda" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-dark-input hover:bg-dark-hover text-brand-300 border border-dark-border transition flex items-center space-x-1.5">
+                <button id="btnRegeneratePara" title="Acak kembali padanan kata untuk variasi baru" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-dark-input hover:bg-dark-hover text-brand-300 border border-dark-border transition flex items-center space-x-1.5">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                   <span>Variasi Lain</span>
                 </button>
 
-                <!-- Copy Button -->
                 <button id="btnCopyParaResult" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-600/20 hover:bg-brand-600 text-brand-300 hover:text-white border border-brand-500/30 transition flex items-center space-x-1.5">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                  <span id="copyBtnLabel">Salin</span>
+                  <span id="copyBtnLabel">Salin Teks</span>
                 </button>
               </div>
             </div>
 
-            <!-- Paraphrased Content Container -->
-            <div id="paraResultOutput" class="mt-4 bg-dark-input text-slate-100 text-sm border border-dark-border rounded-xl p-4 overflow-y-auto min-h-[280px] max-h-[380px] leading-relaxed select-text">
-              <span class="text-slate-500 italic">Hasil penulisan ulang dengan variasi kosa kata baru akan muncul di sini...</span>
+            <div id="paraResultOutput" class="mt-4 bg-dark-input text-slate-100 text-sm border border-dark-border rounded-xl p-4 overflow-y-auto min-h-[300px] max-h-[390px] leading-relaxed select-text">
+              <span class="text-slate-500 italic">Hasil parafrasa dengan perombakan struktur kata dan sinonim baru akan ditampilkan di sini...</span>
             </div>
           </div>
 
-          <!-- Comparison Metrics Footer -->
           <div class="mt-4 pt-3 border-t border-dark-border flex flex-wrap items-center justify-between gap-3 text-xs">
             <div class="flex items-center space-x-3">
               <div>
-                <span class="text-slate-400">Penurunan AI:</span>
+                <span class="text-slate-400">Penyesuaian AI:</span>
                 <span id="badgeAiDrop" class="ml-1 px-2.5 py-0.5 rounded-md font-bold bg-dark-input text-emerald-400 border border-emerald-500/30">
-                  -0% (Kini 0%)
+                  0%
                 </span>
               </div>
-              <div class="text-slate-400" id="badgeWordShift">
-                0 frasa disesuaikan
+              <div class="text-emerald-400 font-medium" id="badgeWordShift">
+                0 kata/frasa berhasil dirombak
               </div>
             </div>
 
             <button id="btnSendResultToAnalyzer" class="text-brand-accent hover:text-brand-300 font-semibold underline text-xs transition">
-              Kirim ke Analyzer &rarr;
+              Uji Dokumen di Analyzer &rarr;
             </button>
           </div>
         </div>
@@ -327,26 +319,25 @@
     <section id="viewAnalyzer" class="hidden space-y-6">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        <!-- Left: Text Input & Dropzone -->
         <div class="lg:col-span-7 flex flex-col space-y-4">
           <div class="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-xl">
             <div class="flex items-center justify-between pb-3 border-b border-dark-border">
-              <span class="text-xs font-bold tracking-wider text-slate-400 uppercase">Input Teks / Dokumen</span>
+              <span class="text-xs font-bold tracking-wider text-slate-400 uppercase">Input Teks / Berkas Dokumen</span>
               <div class="flex items-center space-x-2 text-xs">
-                <button id="btnSampleAnalyzer" class="text-brand-accent hover:text-brand-300 px-2.5 py-1 rounded-lg bg-brand-500/10 border border-brand-500/20">Sampel</button>
+                <button id="btnSampleAnalyzer" class="text-brand-accent hover:text-brand-300 px-2.5 py-1 rounded-lg bg-brand-500/10 border border-brand-500/20">Sampel Teks</button>
                 <button id="btnClearAnalyzer" class="text-slate-500 hover:text-rose-400 px-2.5 py-1">Hapus</button>
               </div>
             </div>
 
-            <textarea id="analyzerInputArea" rows="11" class="w-full mt-4 bg-dark-input text-slate-100 placeholder-slate-500 text-sm border border-dark-border rounded-xl p-4 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition resize-y leading-relaxed" placeholder="Tempelkan dokumen atau artikel untuk dianalisis probabilitas AI dan struktur pengulangannya..."></textarea>
+            <textarea id="analyzerInputArea" rows="11" class="w-full mt-4 bg-dark-input text-slate-100 placeholder-slate-500 text-sm border border-dark-border rounded-xl p-4 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition resize-y leading-relaxed" placeholder="Tempelkan dokumen atau artikel untuk dianalisis probabilitas pola AI dan pengulangannya..."></textarea>
 
             <!-- Document Drag and Drop -->
             <div id="dropZoneContainer" class="mt-4 border-2 border-dashed border-dark-border hover:border-brand-500/60 rounded-xl p-4 text-center cursor-pointer transition bg-dark-input/40 group">
               <input type="file" id="fileDocInput" class="hidden" accept=".txt,.pdf,.docx">
               <div class="flex flex-col items-center justify-center space-y-1">
                 <svg class="w-7 h-7 text-slate-500 group-hover:text-brand-accent transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                <p id="labelUploadedFileName" class="text-xs text-slate-300 font-medium">Unggah atau seret file PDF, DOCX, atau TXT ke sini</p>
-                <p class="text-[10px] text-slate-500">Diproses secara lokal di browser Anda (Maksimal 15 MB)</p>
+                <p id="labelUploadedFileName" class="text-xs text-slate-300 font-medium">Unggah berkas PDF, DOCX, atau TXT ke sini</p>
+                <p class="text-[10px] text-slate-500">Mengekstrak teks langsung di browser tanpa upload server (Maksimal 15 MB)</p>
               </div>
             </div>
 
@@ -359,18 +350,14 @@
           </div>
         </div>
 
-        <!-- Right: Scores & Paragraph Breakdown -->
         <div class="lg:col-span-5 flex flex-col space-y-4">
-          
-          <!-- Metric Score Cards -->
           <div class="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-xl">
             <div class="flex items-center justify-between pb-3 border-b border-dark-border">
-              <span class="text-xs font-bold tracking-wider text-slate-400 uppercase">Ringkasan Skor & Probabilitas</span>
+              <span class="text-xs font-bold tracking-wider text-slate-400 uppercase">Ringkasan Statistik Dokumen</span>
               <span id="statTimestamp" class="text-[11px] text-slate-500 font-mono-code">-</span>
             </div>
 
             <div class="grid grid-cols-2 gap-3 mt-4">
-              <!-- AI Probability Card -->
               <div class="bg-dark-input border border-dark-border rounded-xl p-3.5 flex flex-col justify-between">
                 <div>
                   <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">AI Probability</div>
@@ -384,13 +371,12 @@
                 </div>
               </div>
 
-              <!-- Heuristic Similarity Card -->
               <div class="bg-dark-input border border-dark-border rounded-xl p-3.5 flex flex-col justify-between">
                 <div>
-                  <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Heuristic Repetition</div>
+                  <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Indeks Repetisi Kata</div>
                   <div class="flex items-baseline space-x-2 mt-1">
                     <span id="metricSimilarity" class="text-3xl font-black text-white">0%</span>
-                    <span id="badgeSimilarityStatus" class="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-800 text-slate-400">Normal</span>
+                    <span id="badgeSimilarityStatus" class="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-800 text-slate-400">Wajar</span>
                   </div>
                 </div>
                 <div class="w-full bg-slate-800 rounded-full h-1.5 mt-3 overflow-hidden">
@@ -399,32 +385,30 @@
               </div>
             </div>
 
-            <!-- Detailed Numeric Metrics -->
             <div class="grid grid-cols-4 gap-2 mt-3 text-center">
               <div class="p-2 rounded-xl bg-dark-input/60 border border-dark-border/40">
                 <div class="text-[10px] text-slate-400">Kata</div>
                 <div id="metricWordCount" class="text-sm font-bold text-slate-200">0</div>
               </div>
               <div class="p-2 rounded-xl bg-dark-input/60 border border-dark-border/40">
-                <div class="text-[10px] text-slate-400">Karakter</div>
+                <div class="text-[10px] text-slate-400">Aksara</div>
                 <div id="metricCharCount" class="text-sm font-bold text-slate-200">0</div>
               </div>
               <div class="p-2 rounded-xl bg-dark-input/60 border border-dark-border/40">
-                <div class="text-[10px] text-slate-400">Kalimat</div>
+                <div class="text-[10px] text-slate-400">Ayat/Kalimat</div>
                 <div id="metricSentenceCount" class="text-sm font-bold text-slate-200">0</div>
               </div>
               <div class="p-2 rounded-xl bg-dark-input/60 border border-dark-border/40">
-                <div class="text-[10px] text-slate-400">Waktu Baca</div>
+                <div class="text-[10px] text-slate-400">Masa Baca</div>
                 <div id="metricReadingTime" class="text-sm font-bold text-slate-200">0 mnt</div>
               </div>
             </div>
           </div>
 
-          <!-- Paragraph Breakdown Accordion/List -->
           <div class="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-xl flex flex-col">
             <div class="flex items-center justify-between pb-3 border-b border-dark-border">
-              <span class="text-xs font-bold tracking-wider text-slate-400 uppercase">Rincian Per Paragraf</span>
-              <span id="metricParagraphCount" class="text-xs text-slate-400">0 Paragraf</span>
+              <span class="text-xs font-bold tracking-wider text-slate-400 uppercase">Pecahan Perenggan</span>
+              <span id="metricParagraphCount" class="text-xs text-slate-400">0 Perenggan</span>
             </div>
 
             <div id="paragraphResultsContainer" class="mt-3 space-y-2.5 max-h-[360px] overflow-y-auto pr-1">
@@ -441,7 +425,7 @@
 
     <div id="printableReport" class="hidden print-report-container p-6 bg-white text-slate-900">
       <div class="border-b-2 border-slate-900 pb-4 mb-4">
-        <h1 class="text-2xl font-black">Laporan Audit Teks & Analisis AI</h1>
+        <h1 class="text-2xl font-black">Laporan Audit Dokumen & Analisis Teks</h1>
         <p class="text-xs text-slate-500" id="printReportMeta"></p>
       </div>
 
@@ -473,124 +457,105 @@
   </main>
 
   <script>
-    // State Application
     let storedGeminiKey = localStorage.getItem('TEXTCHECK_GEMINI_KEY') || '';
     let currentParaphrasedText = '';
     let currentOriginalText = '';
 
     const $ = id => document.getElementById(id);
 
-    // Initial Engine Status Update
     function updateKeyBadgeUI() {
       if (storedGeminiKey) {
-        $('keyBtnLabel').textContent = 'API Key (Aktif)';
-        $('activeModeBadge').textContent = 'Mesin: Gemini LLM + Heuristik Cerdas';
-        $('engineStatusLabel').textContent = 'Gemini AI + Local Engine';
-        $('engineStatusPill').className = 'flex items-center space-x-2 text-xs font-medium text-brand-400 bg-brand-950/40 border border-brand-500/30 px-3 py-1.5 rounded-full';
+        $('keyBtnLabel').textContent = 'Gemini LLM (Aktif)';
+        $('activeModeBadge').textContent = 'Mesin: Gemini LLM + Heuristik Sintaksis';
+        $('engineStatusLabel').textContent = 'Gemini LLM Engine Online';
+        $('engineStatusPill').className = 'flex items-center space-x-2 text-xs font-semibold text-brand-400 bg-brand-950/40 border border-brand-500/30 px-3 py-1.5 rounded-full';
       } else {
         $('keyBtnLabel').textContent = 'Gemini API Key (Opsional)';
-        $('activeModeBadge').textContent = 'Mesin: Algoritma Sintaksis Lokal';
-        $('engineStatusLabel').textContent = 'Standalone Client Engine';
-        $('engineStatusPill').className = 'flex items-center space-x-2 text-xs font-medium text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-3 py-1.5 rounded-full';
+        $('activeModeBadge').textContent = 'Mesin: Algoritma Sintaksis Terintegrasi';
+        $('engineStatusLabel').textContent = 'Local Rewriter Engine (Aktif)';
+        $('engineStatusPill').className = 'flex items-center space-x-2 text-xs font-semibold text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-3 py-1.5 rounded-full';
       }
     }
     updateKeyBadgeUI();
 
-    // ==========================================
-    // EXTENSIVE INDONESIAN THESAURUS & SYNTAX RULES
-    // ==========================================
-    const INDO_THESAURUS = {
-      academic: [
-        { pattern: /\bsangat\s+penting\b/gi, choices: ["sangat krusial", "memegang peranan esensial", "amat fundamental", "bersifat signifikatif"] },
-        { pattern: /\bpenting\b/gi, choices: ["krusial", "esensial", "fundamental", "signifikan", "berarti"] },
-        { pattern: /\bsangat\b/gi, choices: ["secara signifikan", "amat", "teramat", "substansial", "cukup mendalam"] },
-        { pattern: /\bkarena\b/gi, choices: ["disebabkan oleh faktor", "berlandaskan pada fakta bahwa", "terdorong oleh determinan", "mempertimbangkan bahwa"] },
-        { pattern: /\boleh karena itu\b/gi, choices: ["oleh sebab itu", "konsekuensinya", "dengan demikian", "maka dari itu", "atas dasar tersebut"] },
-        { pattern: /\bmenunjukkan\b/gi, choices: ["mengindikasikan", "memaparkan bukti bahwa", "merefleksikan", "mengonfirmasi", "memanifestasikan"] },
-        { pattern: /\bmenggunakan\b/gi, choices: ["mengaplikasikan", "mengutilisasi", "mendayagunakan", "mengimplementasikan"] },
-        { pattern: /\bmembuat\b/gi, choices: ["memformulasi", "mengonstruksi", "menghasilkan", "mengembangkan"] },
-        { pattern: /\bmenemukan\b/gi, choices: ["mengidentifikasi", "memperoleh simpulan", "menemukenali", "menyingkap temuan"] },
-        { pattern: /\bmasalah\b/gi, choices: ["problematika", "kendala metodologis", "anomali", "komplikasi fenomena"] },
-        { pattern: /\bbanyak\b/gi, choices: ["sejumlah besar", "beragam variasi", "rentetan", "mayoritas"] },
-        { pattern: /\bcontohnya\b/gi, choices: ["sebagai ilustrasi empiris", "sebagai representasi", "dalam hal ini"] },
-        { pattern: /\bkesimpulannya\b/gi, choices: ["berdasarkan inferensi tersebut", "secara konklusif", "sebagai sintesis akhir"] },
-        { pattern: /\bperkembangan\b/gi, choices: ["evolusi akseleratif", "progresivitas", "transformasi berkelanjutan"] },
-        { pattern: /\bmembantu\b/gi, choices: ["memfasilitasi", "memberikan kontribusi substansial terhadap", "mendukung akselerasi"] },
-        { pattern: /\bberdampak pada\b/gi, choices: ["memberikan implikasi nyata terhadap", "mempengaruhi dinamika", "bermuara pada"] },
-        { pattern: /\bpenelitian ini\b/gi, choices: ["studi komprehensif ini", "kajian empiris ini", "eksplorasi ilmiah ini"] },
-        { pattern: /\bmetode\b/gi, choices: ["metodologi", "prosedur pendekatan sistematis", "tata cara analisis"] },
-        { pattern: /\btujuan\b/gi, choices: ["objektif utama", "orientasi sasaran", "arah intensi"] },
-        { pattern: /\bmembuktikan\b/gi, choices: ["memvalidasi kebenaran", "mengukuhkan dalil bahwa", "menegaskan fakta"] }
-      ],
+    // =========================================================================
+    // KAMUS BESAR TESAURUS BAHASA INDONESIA (Mencakup Berita, Media, Narasi & Jurnal)
+    // =========================================================================
+    const COMPREHENSIVE_ID_DICTIONARY = [
+      // Frasa Berita & Media Spesifik
+      { pattern: /\banak di bawah umur\b/gi, choices: ["anak di bawah batas usia", "kelompok usia anak", "anak yang belum cukup umur", "golongan usia dini"] },
+      { pattern: /\bmendapat perhatian publik\b/gi, choices: ["menuai sorotan khalayak", "menyita perhatian masyarakat luas", "menjadi perbincangan hangat publik", "menarik atensi masyarakat"] },
+      { pattern: /\brokok elektronik\b/gi, choices: ["rokok elektrik", "produk vape", "perangkat rokok elektrik", "vape"] },
+      { pattern: /\bmasuk ke dalam kamera\b/gi, choices: ["ikut tersorot kamera", "tampil di depan sorotan kamera", "terekam dalam siaran", "masuk ke frame rekaman"] },
+      { pattern: /\bmedia melaporkan bahwa\b/gi, choices: ["pemberitaan media menyebutkan bahwa", "sejumlah laporan media memaparkan bahwa", "warta berita mengabarkan bahwa"] },
+      { pattern: /\bpotongan dari siaran tersebut\b/gi, choices: ["cuplikan tayangan siaran itu", "rekaman potongan siaran tersebut", "penggalan video tayangan itu"] },
+      { pattern: /\btersebut kemudian beredar\b/gi, choices: ["itu lantas tersebar luas di jagat maya", "itu selanjutnya viral beredar", "itu kemudian ramai dibagikan"] },
+      { pattern: /\bdalam siaran itu\b/gi, choices: ["pada sesi tayangan tersebut", "di tengah siaran langsung itu", "sepanjang siaran tersebut"] },
+      
+      // Kata Kerja Berita & Tindakan (Verbs)
+      { pattern: /\bmelibatkan\b/gi, choices: ["mengikutsertakan", "menyertakan", "turut menghadirkan", "membawa serta"] },
+      { pattern: /\bpromosi\b/gi, choices: ["pemasaran", "pengenalan produk", "promosi komersial", "kampanye promosi"] },
+      { pattern: /\bberlangsung\b/gi, choices: ["terjadi", "diadakan", "terlaksana", "bergulir"] },
+      { pattern: /\bberedar\b/gi, choices: ["tersebar luas", "ramai tersiar", "viral beredar", "tersebar di publik"] },
+      { pattern: /\bmelaporkan\b/gi, choices: ["memberitakan", "mengabarkan", "menyatakan", "mewartakan"] },
+      { pattern: /\bmendatangi\b/gi, choices: ["menghampiri", "menemui langsung", "berkunjung ke", "mendekati"] },
+      { pattern: /\bmengajak\b/gi, choices: ["meminta", "mengikutsertakan", "membujuk", "mengajak serta"] },
+      { pattern: /\bmempromosikan\b/gi, choices: ["mengiklankan", "memasarkan", "memperkenalkan", "mengampanyekan"] },
+      { pattern: /\bmenjelaskan\b/gi, choices: ["memaparkan", "menerangkan", "menguraikan", "membeberkan"] },
+      { pattern: /\bmenemukan\b/gi, choices: ["mendapati", "menjumpai", "mengidentifikasi", "menemukenali"] },
+      { pattern: /\bmengatakan\b/gi, choices: ["menyampaikan", "menuturkan", "berujar", "mengungkapkan"] },
+      { pattern: /\bmemperlihatkan\b/gi, choices: ["menunjukkan", "menampakkan", "mempertontonkan", "menyajikan bukti"] },
+      { pattern: /\bmenyebabkan\b/gi, choices: ["mengakibatkan", "memicu timbulnya", "mendatangkan konsekuensi", "berujung pada"] },
+      { pattern: /\bmembutuhkan\b/gi, choices: ["memerlukan", "menuntut adanya", "mewajibkan ketersediaan"] },
+      { pattern: /\bmeningkatkan\b/gi, choices: ["mengoptimalkan", "mendongkrak", "mengatrol", "melejitkan"] },
+      { pattern: /\bmembantu\b/gi, choices: ["mempermudah", "turut memfasilitasi", "memberikan dorongan pada"] },
+      { pattern: /\bmengurangi\b/gi, choices: ["menekan laju", "memangkas", "meminimalisasi", "mereduksi"] },
+      { pattern: /\bmembuat\b/gi, choices: ["menjadikan", "menghasilkan", "menciptakan", "membentuk"] },
 
-      formal: [
-        { pattern: /\bsangat\b/gi, choices: ["amat", "sungguh", "begitu"] },
-        { pattern: /\bkarena\b/gi, choices: ["oleh karena", "disebabkan", "mengingat"] },
-        { pattern: /\boleh karena itu\b/gi, choices: ["maka dari itu", "dengan demikian", "sehubungan dengan hal tersebut"] },
-        { pattern: /\bmenunjukkan\b/gi, choices: ["memperlihatkan", "menjelaskan", "menggambarkan"] },
-        { pattern: /\bmenggunakan\b/gi, choices: ["memanfaatkan", "menerapkan", "mengoperasikan"] },
-        { pattern: /\bmasalah\b/gi, choices: ["kendala", "hambatan", "persoalan"] },
-        { pattern: /\bmembantu\b/gi, choices: ["mempermudah", "mendukung pelaksanaan", "turut menyukseskan"] },
-        { pattern: /\bdalam rangka\b/gi, choices: ["guna tujuan", "untuk keperluan", "demi kelancaran"] },
-        { pattern: /\bnamun demikian\b/gi, choices: ["kendati begitu", "walaupun demikian", "akan tetapi"] },
-        { pattern: /\bmemberikan\b/gi, choices: ["menyampaikan", "menyalurkan", "menyediakan"] },
-        { pattern: /\bberkaitan dengan\b/gi, choices: ["berhubungan erat dengan", "menyangkut perihal", "mengenai"] },
-        { pattern: /\bcepat\b/gi, choices: ["segera", "tangkas", "dalam waktu singkat"] }
-      ],
-
-      natural: [
-        { pattern: /\bsangat\b/gi, choices: ["cukup", "benar-benar", "sungguh"] },
-        { pattern: /\bmenunjukkan\b/gi, choices: ["menampakkan", "memberi gambaran", "membuktikan"] },
-        { pattern: /\bmenggunakan\b/gi, choices: ["memakai", "mengandalkan"] },
-        { pattern: /\bwalau bagaimanapun\b/gi, choices: ["tetapi", "namun", "di samping itu"] },
-        { pattern: /\boleh sebab itu\b/gi, choices: ["makanya", "alhasil", "akibatnya"] },
-        { pattern: /\bmemerlukan\b/gi, choices: ["butuh", "menuntut adanya", "perlu"] },
-        { pattern: /\bmemperoleh\b/gi, choices: ["mendapatkan", "meraih"] },
-        { pattern: /\bhal ini disebabkan\b/gi, choices: ["ini terjadi karena", "alasannya adalah", "penyebabnya yaitu"] },
-        { pattern: /\bmerupakan\b/gi, choices: ["adalah", "termasuk salah satu", "jadi"] },
-        { pattern: /\bbisa\b/gi, choices: ["dapat", "mampu", "berpeluang untuk"] }
-      ],
-
-      simple: [
-        { pattern: /\bsecara signifikan\b/gi, choices: ["jelas", "nyata", "terlihat"] },
-        { pattern: /\bmengindikasikan\b/gi, choices: ["menandakan", "menunjukkan"] },
-        { pattern: /\bmengimplementasikan\b/gi, choices: ["memakai", "menjalankan", "menerapkan"] },
-        { pattern: /\bdikarenakan oleh\b/gi, choices: ["karena", "sebab"] },
-        { pattern: /\bberdasarkan pada\b/gi, choices: ["menurut", "dari"] },
-        { pattern: /\bmemfasilitasi\b/gi, choices: ["membantu", "memudahkan"] },
-        { pattern: /\bterminologi\b/gi, choices: ["istilah", "kata"] }
-      ],
-
-      creative: [
-        { pattern: /\bberkembang\b/gi, choices: ["bersemi mekar", "menghentak panggung dunia", "melesat pesat bagai kilat"] },
-        { pattern: /\bsangat penting\b/gi, choices: ["urat nadi utama", "kunci emas keberhasilan", "fondasi tak tergoyahkan"] },
-        { pattern: /\bmenimbulkan kekhawatiran\b/gi, choices: ["meniupkan bayang-bayang kegelisahan", "memicu tanda tanya mendalam"] },
-        { pattern: /\bpesat\b/gi, choices: ["seperti air bah mengalir deras", "tanpa rem", "begitu dramatis"] },
-        { pattern: /\bmasalah\b/gi, choices: ["jebakan kerikil tajam", "dinding rintangan", "teka-teki rumit"] }
-      ]
-    };
-
-    // Sentence clause restructure patterns (Discourse markers shifting)
-    const CLAUSE_RESTRUCTURERS = [
-      {
-        trigger: /^(namun demikian|akan tetapi|walaupun demikian),\s*/i,
-        substitutes: ["Di sisi lain yang berbeda, ", "Sebaliknya, jika ditelaah lebih lanjut, ", "Meskipun begitu, kenyataannya "]
-      },
-      {
-        trigger: /^(oleh karena itu|maka dari itu|oleh sebab itu),\s*/i,
-        substitutes: ["Berpijak pada dinamika tersebut, ", "Sebagai implikasi logis, ", "Rentetan peristiwa ini menuntut "]
-      },
-      {
-        trigger: /^(penelitian|kajian|studi)\s+(ini|tersebut)\s+menunjukkan bahwa\s*/i,
-        substitutes: ["Hasil observasi faktual memvalidasi bahwa ", "Bukti empiris menegaskan bahwa secara terukur, ", "Dapatan studi mengonfirmasi bahwa "]
-      },
-      {
-        trigger: /^(selain itu|di samping itu),\s*/i,
-        substitutes: ["Tidak kalah pentingnya, ", "Menyertai hal tersebut, ", "Dalam dimensi yang sejajar, "]
-      }
+      // Kata Penghubung & Transisi (Transitions & Discourse)
+      { pattern: /\bkemudian\b/gi, choices: ["selanjutnya", "lantas", "setelahnya", "lalu"] },
+      { pattern: /\bnamun demikian\b/gi, choices: ["kendati demikian", "akan tetapi", "meski begitu", "di sisi lain"] },
+      { pattern: /\bnamun\b/gi, choices: ["akan tetapi", "tetapi", "kendati begitu", "hanya saja"] },
+      { pattern: /\boleh karena itu\b/gi, choices: ["oleh sebab itu", "maka dari itu", "dengan demikian", "atas dasar hal tersebut"] },
+      { pattern: /\bkarena\b/gi, choices: ["disebabkan oleh", "lantaran", "mengingat", "beralaskan fakta bahwa"] },
+      { pattern: /\bsehingga\b/gi, choices: ["alhasil", "yang bermuara pada", "sampai-sampai", "akibatnya"] },
+      { pattern: /\bsangat\b/gi, choices: ["amat", "begitu", "cukup signifikan", "teramat"] },
+      { pattern: /\bpenting\b/gi, choices: ["krusial", "vital", "fundamental", "esensial"] },
+      { pattern: /\bproduk\b/gi, choices: ["barang dagangan", "komoditas", "produk olahan"] },
+      { pattern: /\bpenjual\b/gi, choices: ["pedagang", "pelaku usaha", "pihak penjaja"] },
+      { pattern: /\blokasi\b/gi, choices: ["tempat kejadian", "titik area", "tempat tersebut"] },
+      { pattern: /\bmasalah\b/gi, choices: ["persoalan", "kendala", "isu serius", "problematika"] }
     ];
 
-    // Helper text processing
+    // RESTUKTURISASI URUTAN KLAUSA MAJEMUK
+    function restructureSentenceClauses(sentence, intensity) {
+      if (intensity !== 'extreme' && intensity !== 'high') return sentence;
+
+      let s = sentence.trim();
+
+      // Pola: "X yang melibatkan Y dalam Z" -> "Dalam Z, X menyertakan Y"
+      const matchMelibatkan = s.match(/^(.*?)\s+yang melibatkan\s+(.*?)\s+dalam\s+(.*)$/i);
+      if (matchMelibatkan && matchMelibatkan[3].length > 5) {
+        return `Terkait ${matchMelibatkan[3].trim()}, ${matchMelibatkan[1].trim()} turut mengikutsertakan ${matchMelibatkan[2].trim()}`;
+      }
+
+      // Pola: "Potongan dari siaran tersebut kemudian beredar dan mendapat perhatian publik"
+      if (/kemudian beredar dan mendapat perhatian publik/i.test(s)) {
+        return s.replace(/kemudian beredar dan mendapat perhatian publik/i, "lantas tersebar luas hingga menuai sorotan hangat publik");
+      }
+
+      // Pola pembalik klausa dengan "karena" atau "lantaran"
+      if (/\s+karena\s+/i.test(s) && !s.startsWith("Karena")) {
+        const parts = s.split(/\s+karena\s+/i);
+        if (parts.length === 2 && parts[0].length > 15 && parts[1].length > 15) {
+          return `Mengingat ${parts[1].replace(/[.,!?;]$/, '').trim()}, maka ${parts[0].charAt(0).toLowerCase() + parts[0].slice(1).trim()}`;
+        }
+      }
+
+      return s;
+    }
+
+    // Helper text extraction
     function extractWords(str) {
       if (!str) return [];
       return str.match(/[\p{L}\p{N}'-]+/gu) || [];
@@ -606,48 +571,42 @@
       return str.split(/\n\s*\n|\n/).map(p => p.trim()).filter(Boolean);
     }
 
-    // Heuristic AI Probability Formula
+    // Heuristik Deteksi AI
     function calculateAiProbability(text) {
       const words = extractWords(text);
       const sents = extractSentences(text);
       if (words.length === 0) return 0;
 
       const avgWordsPerSent = words.length / Math.max(sents.length, 1);
-      
       const lower = words.map(w => w.toLowerCase());
       const unique = new Set(lower);
       const repetitionRatio = 1 - (unique.size / words.length);
 
-      // Sentences longer than 28 words (common AI pattern)
-      const complexSentRatio = sents.filter(s => extractWords(s).length > 28).length / Math.max(sents.length, 1);
+      const complexSentRatio = sents.filter(s => extractWords(s).length > 25).length / Math.max(sents.length, 1);
 
-      // Sentence burstiness calculation (variance in length)
       const lengths = sents.map(s => extractWords(s).length);
       const mean = avgWordsPerSent;
       const variance = lengths.reduce((acc, l) => acc + Math.pow(l - mean, 2), 0) / Math.max(lengths.length, 1);
       const stdDev = Math.sqrt(variance);
 
-      // AI texts often have monotonous, flat sentence length variance (low burstiness)
-      const burstinessPenalty = stdDev < 4.2 ? 14 : (stdDev > 9 ? -9 : 0);
+      const burstinessPenalty = stdDev < 4.0 ? 15 : (stdDev > 8 ? -10 : 0);
+      const rawScore = 14 + Math.min(30, avgWordsPerSent * 0.7) + Math.min(30, repetitionRatio * 100) + (complexSentRatio * 20) + burstinessPenalty;
 
-      const rawScore = 15 + Math.min(30, avgWordsPerSent * 0.72) + Math.min(28, repetitionRatio * 105) + (complexSentRatio * 20) + burstinessPenalty;
-
-      return Math.round(Math.max(3, Math.min(97, rawScore)));
+      return Math.round(Math.max(2, Math.min(96, rawScore)));
     }
 
-    // Heuristic Similarity/Repetition score
     function calculateSimilarity(text) {
       const words = extractWords(text).map(w => w.toLowerCase());
       if (words.length === 0) return 0;
       const unique = new Set(words);
       const repetition = 1 - (unique.size / words.length);
-      return Math.round(Math.max(1, Math.min(32, repetition * 48)));
+      return Math.round(Math.max(1, Math.min(35, repetition * 50)));
     }
 
     function getAiClassification(score) {
       if (score >= 70) return { label: 'Tinggi (AI-like)', cls: 'bg-rose-500/20 text-rose-400 border border-rose-500/30' };
-      if (score >= 40) return { label: 'Sedang (Mixed)', cls: 'bg-amber-500/20 text-amber-400 border border-amber-500/30' };
-      return { label: 'Rendah (Human-like)', cls: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' };
+      if (score >= 40) return { label: 'Sedang (Campuran)', cls: 'bg-amber-500/20 text-amber-400 border border-amber-500/30' };
+      return { label: 'Rendah (Humanis)', cls: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' };
     }
 
     function escapeHtml(s) {
@@ -657,41 +616,30 @@
     }
 
     function runLocalParaphrase(text, style, intensity) {
-      const dict = INDO_THESAURUS[style] || INDO_THESAURUS.natural;
       const paragraphs = extractParagraphs(text);
       let replacedCount = 0;
 
       const results = paragraphs.map(p => {
         let sentences = extractSentences(p);
 
-        // 1. Structure reorganization (Discourse Restructuring)
-        if (intensity === 'high' || intensity === 'medium') {
-          sentences = sentences.map(sent => {
-            let s = sent;
-            for (const restruct of CLAUSE_RESTRUCTURERS) {
-              if (restruct.trigger.test(s)) {
-                const pick = restruct.substitutes[Math.floor(Math.random() * restruct.substitutes.length)];
-                s = s.replace(restruct.trigger, pick);
-                replacedCount++;
-                break;
-              }
-            }
-            return s;
-          });
-        }
+        // 1. Restrukturisasi urutan klausa pada kalimat
+        sentences = sentences.map(sent => {
+          const transformed = restructureSentenceClauses(sent, intensity);
+          if (transformed !== sent) replacedCount += 2;
+          return transformed;
+        });
 
         let combined = sentences.join(' ');
 
-        // 2. Rich Dictionary Synonyms Replacement
-        dict.forEach(item => {
+        // 2. Substitusi Sinonim & Frasa Berita/Umum
+        COMPREHENSIVE_ID_DICTIONARY.forEach(item => {
           combined = combined.replace(item.pattern, (matched) => {
-            // Intensity filter: if low, only replace 50% of matches
-            if (intensity === 'low' && Math.random() > 0.5) return matched;
+            if (intensity === 'medium' && Math.random() > 0.65) return matched;
             
             const pick = item.choices[Math.floor(Math.random() * item.choices.length)];
             replacedCount++;
 
-            // Preserve initial uppercase if applicable
+            // Jaga huruf kapital awal
             if (matched[0] === matched[0].toUpperCase() && matched[0] !== matched[0].toLowerCase()) {
               return pick.charAt(0).toUpperCase() + pick.slice(1);
             }
@@ -699,12 +647,11 @@
           });
         });
 
-        // 3. Syntactic smoothing
-        if (intensity === 'high') {
-          combined = combined
-            .replace(/\bhal ini karena\b/gi, () => { replacedCount++; return "kondisi ini muncul lantaran"; })
-            .replace(/\bdapat disimpulkan bahwa\b/gi, () => { replacedCount++; return "dapat digarisbawahi secara terang bahwa"; })
-            .replace(/\bseperti yang kita ketahui\b/gi, () => { replacedCount++; return "sebagaimana yang telah terbukti"; });
+        // 3. Penyesuaian Gaya Spesifik Tambahan
+        if (style === 'academic') {
+          combined = combined.replace(/\bterjadi\b/gi, () => { replacedCount++; return "termanifestasi secara empiris"; });
+        } else if (style === 'simple') {
+          combined = combined.replace(/\bmengikutsertakan\b/gi, () => { replacedCount++; return "mengajak"; });
         }
 
         return combined;
@@ -716,17 +663,17 @@
       };
     }
 
-    // Call Gemini API LLM directly from user browser if key provided
+    // Panggilan Gemini LLM jika API Key disediakan
     async function runGeminiLLMParaphrase(text, style, intensity, apiKey) {
-      const prompt = `Anda adalah editor bahasa profesional. Tolong lakukan parafrase pada teks berbahasa Indonesia berikut.
-GAYA PENULISAN: ${style.toUpperCase()}
-INTENSITAS PERUBAHAN: ${intensity.toUpperCase()}
+      const prompt = `Lakukan parafrase teks berita / artikel / tulisan bahasa Indonesia berikut secara mendalam dan alami.
+Gaya: ${style.toUpperCase()}
+Intensitas: ${intensity.toUpperCase()}
 
-Instruksi khusus:
-1. Ubah struktur kalimat secara mendalam agar terasa alami (human-like) dan variatif.
-2. Hindari frasa klise robotik khas AI.
-3. Pertahankan substansi inti pesan tanpa menghilangkan fakta asli.
-4. Kembalikan HANYA teks hasil parafrase tanpa pengantar, tanpa salam pembuka, dan tanpa tanda kutip pembungkus.
+Panduan wajib:
+1. Rombak struktur kalimat dan pilih sinonim yang lebih kaya dan segar.
+2. Jangan hapus nama orang, entitas, tanggal, atau fakta esensial.
+3. Buat kalimat mengalir luwes layaknya ditulis manusia profesional tanpa kalimat klise khas AI.
+4. Kembalikan HANYA teks hasil parafrase tanpa salam pembuka, tanpa pengantar, dan tanpa tanda kutip pembungkus.
 
 Teks Asli:
 ${text}`;
@@ -735,7 +682,7 @@ ${text}`;
       const payload = {
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
-          temperature: intensity === 'high' ? 0.85 : 0.65
+          temperature: intensity === 'extreme' ? 0.9 : 0.7
         }
       };
 
@@ -756,22 +703,21 @@ ${text}`;
 
       return {
         rewrittenText: output.trim(),
-        changes: Math.round(extractWords(text).length * 0.45)
+        changes: Math.round(extractWords(text).length * 0.5)
       };
     }
 
-    // Visual Diff Renderer
+    // Visual Diff Display
     function renderDiffComparison(original, paraphrased) {
       const origWords = new Set(extractWords(original).map(w => w.toLowerCase()));
       const paragraphs = extractParagraphs(paraphrased);
 
       return paragraphs.map(p => {
-        // Split by token boundaries preserving punctuation & spaces
         const tokens = p.split(/(\s+|[.,!?;:()"])/);
         const markedTokens = tokens.map(tok => {
           const clean = tok.trim().toLowerCase();
           if (clean.length > 2 && !origWords.has(clean) && /^[\p{L}\p{N}'-]+$/u.test(clean)) {
-            return `<span class="diff-changed" title="Kata/frasa baru">${escapeHtml(tok)}</span>`;
+            return `<span class="diff-added" title="Kata atau frasa baru hasil parafrasa">${escapeHtml(tok)}</span>`;
           }
           return escapeHtml(tok);
         }).join('');
@@ -779,24 +725,25 @@ ${text}`;
       }).join('');
     }
 
-    const SAMPLE_DOC = `Kecerdasan buatan telah berkembang dengan sangat pesat dalam era teknologi digital ini. Penggunaan algoritma pembelajaran mesin telah memberikan impak yang sangat penting dalam sektor kesihatan dan pendidikan. Banyak penyelidikan menunjukkan bahawa automasi mampu meningkatkan produktiviti kerja dengan ketara. Namun demikian, perkembangan ini turut menimbulkan masalah etika yang serius berkaitan privasi data. Oleh sebab itu, kita memerlukan garis panduan yang kukuh untuk memastikan sistem ini adil.`;
+    const BIGMO_CASE_SAMPLE = `1. Identifikasi Kasus:
+Konten live streaming YouTuber Muhammad Jannah atau Bigmo yang melibatkan anak di bawah umur dalam promosi produk rokok elektronik (vape). Konten live tersebut berlangsung pada 28 Juli 2026. Potongan dari siaran tersebut kemudian beredar dan mendapat perhatian publik. Media melaporkan bahwa dalam siaran itu Bigmo mendatangi penjual liquid vape dan mengajak beberapa anak yang berada di lokasi masuk ke dalam kamera sambil mempromosikan produk vape.`;
 
     $('btnInsertSamplePara').addEventListener('click', () => {
-      $('paraInputArea').value = SAMPLE_DOC;
+      $('paraInputArea').value = BIGMO_CASE_SAMPLE;
       updateParaInputMetrics();
     });
 
     $('btnSampleAnalyzer').addEventListener('click', () => {
-      $('analyzerInputArea').value = SAMPLE_DOC;
+      $('analyzerInputArea').value = BIGMO_CASE_SAMPLE;
       $('btnRunAnalyzer').click();
     });
 
     $('btnClearParaInput').addEventListener('click', () => {
       $('paraInputArea').value = '';
       updateParaInputMetrics();
-      $('paraResultOutput').innerHTML = '<span class="text-slate-500 italic">Hasil penulisan ulang dengan variasi kosa kata baru akan muncul di sini...</span>';
-      $('badgeAiDrop').textContent = '-0% (Kini 0%)';
-      $('badgeWordShift').textContent = '0 frasa disesuaikan';
+      $('paraResultOutput').innerHTML = '<span class="text-slate-500 italic">Hasil parafrasa dengan perombakan struktur kata dan sinonim baru akan ditampilkan di sini...</span>';
+      $('badgeAiDrop').textContent = '0%';
+      $('badgeWordShift').textContent = '0 kata/frasa berhasil dirombak';
     });
 
     $('paraInputArea').addEventListener('input', updateParaInputMetrics);
@@ -814,11 +761,11 @@ ${text}`;
       }
     }
 
-    // Execution Core for Paraphrase
+    // Eksekusi Tombol Parafrasa
     async function triggerParaphraseExecution() {
       const text = $('paraInputArea').value.trim();
       if (!text) {
-        $('paraResultOutput').innerHTML = `<div class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs">Peringatan: Masukkan teks terlebih dahulu ke dalam kotak Teks Asli.</div>`;
+        $('paraResultOutput').innerHTML = `<div class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs">Peringatan: Tempelkan teks terlebih dahulu di kolom Teks Asli.</div>`;
         return;
       }
 
@@ -830,7 +777,7 @@ ${text}`;
 
       btn.disabled = true;
       spinner.classList.remove('hidden');
-      btnLabel.textContent = 'Memparafrase...';
+      btnLabel.textContent = 'Memproses...';
 
       try {
         const initialAi = calculateAiProbability(text);
@@ -839,31 +786,31 @@ ${text}`;
         if (storedGeminiKey) {
           resultData = await runGeminiLLMParaphrase(text, style, intensity, storedGeminiKey);
         } else {
-          // Slight delay for fluid UX transition
-          await new Promise(r => setTimeout(r, 220));
+          // UX delay realistis
+          await new Promise(r => setTimeout(r, 200));
           resultData = runLocalParaphrase(text, style, intensity);
         }
 
         currentParaphrasedText = resultData.rewrittenText;
         currentOriginalText = text;
 
-        // Render Highlighted Diff
+        // Render Highlight Diff
         const diffHtml = renderDiffComparison(text, resultData.rewrittenText);
         $('paraResultOutput').innerHTML = diffHtml;
 
-        // Compute Metric Improvements
+        // Hitung Perubahan Metrik
         const newAi = calculateAiProbability(resultData.rewrittenText);
         const drop = initialAi - newAi;
 
-        $('badgeAiDrop').textContent = drop > 0 ? `-${drop}% (Kini ${newAi}%)` : `Stabil (${newAi}%)`;
-        $('badgeWordShift').textContent = `${resultData.changes} frasa/kata disesuaikan`;
+        $('badgeAiDrop').textContent = drop > 0 ? `Turun ${drop}% (Kini ${newAi}%)` : `Optimal (${newAi}%)`;
+        $('badgeWordShift').textContent = `${resultData.changes} kata/frasa berhasil dirombak`;
 
       } catch (err) {
-        $('paraResultOutput').innerHTML = `<div class="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs"><strong>Gagal:</strong> ${escapeHtml(err.message)}</div>`;
+        $('paraResultOutput').innerHTML = `<div class="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs"><strong>Kendala:</strong> ${escapeHtml(err.message)}</div>`;
       } finally {
         btn.disabled = false;
         spinner.classList.add('hidden');
-        btnLabel.textContent = 'Parafrase Sekarang';
+        btnLabel.textContent = 'Mulai Parafrasa';
       }
     }
 
@@ -873,7 +820,6 @@ ${text}`;
       triggerParaphraseExecution();
     });
 
-    // Copy to clipboard
     $('btnCopyParaResult').addEventListener('click', () => {
       if (!currentParaphrasedText) return;
       const dummy = document.createElement("textarea");
@@ -889,7 +835,6 @@ ${text}`;
       setTimeout(() => label.textContent = orig, 1500);
     });
 
-    // Send to Analyzer tab
     $('btnSendResultToAnalyzer').addEventListener('click', () => {
       if (!currentParaphrasedText) return;
       $('analyzerInputArea').value = currentParaphrasedText;
@@ -897,7 +842,6 @@ ${text}`;
       $('btnRunAnalyzer').click();
     });
 
-    // Ctrl + Enter shortcut
     $('paraInputArea').addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         triggerParaphraseExecution();
@@ -921,7 +865,7 @@ ${text}`;
     $('btnClearAnalyzer').addEventListener('click', () => {
       $('analyzerInputArea').value = '';
       $('fileDocInput').value = '';
-      $('labelUploadedFileName').textContent = 'Unggah atau seret file PDF, DOCX, atau TXT ke sini';
+      $('labelUploadedFileName').textContent = 'Unggah berkas PDF, DOCX, atau TXT ke sini';
       resetAnalyzerMetricsUI();
     });
 
@@ -933,13 +877,13 @@ ${text}`;
 
       $('metricSimilarity').textContent = '0%';
       $('barSimilarity').style.width = '0%';
-      $('badgeSimilarityStatus').textContent = 'Normal';
+      $('badgeSimilarityStatus').textContent = 'Wajar';
 
       $('metricWordCount').textContent = '0';
       $('metricCharCount').textContent = '0';
       $('metricSentenceCount').textContent = '0';
       $('metricReadingTime').textContent = '0 mnt';
-      $('metricParagraphCount').textContent = '0 Paragraf';
+      $('metricParagraphCount').textContent = '0 Perenggan';
       $('statTimestamp').textContent = '-';
 
       $('paragraphResultsContainer').innerHTML = `
@@ -949,7 +893,6 @@ ${text}`;
       `;
     }
 
-    // Execute Analyzer
     $('btnRunAnalyzer').addEventListener('click', () => {
       const text = $('analyzerInputArea').value.trim();
       if (!text) {
@@ -958,7 +901,7 @@ ${text}`;
         return;
       }
 
-      $('analyzerProgressStatus').textContent = 'Menganalisis indikator teks...';
+      $('analyzerProgressStatus').textContent = 'Menganalisis pola teks...';
       $('analyzerProgressStatus').className = 'text-xs text-slate-400 italic';
 
       const words = extractWords(text);
@@ -976,7 +919,6 @@ ${text}`;
       const avgSim = Math.round(paragraphBreakdown.reduce((sum, item) => sum + item.sim, 0) / paragraphBreakdown.length);
       const overallClassif = getAiClassification(avgAi);
 
-      // Update UI Metrics
       $('metricAiProbability').textContent = `${avgAi}%`;
       $('barAiProbability').style.width = `${avgAi}%`;
       $('badgeAiStatus').textContent = overallClassif.label;
@@ -984,16 +926,15 @@ ${text}`;
 
       $('metricSimilarity').textContent = `${avgSim}%`;
       $('barSimilarity').style.width = `${Math.min(100, avgSim * 3.5)}%`;
-      $('badgeSimilarityStatus').textContent = avgSim > 18 ? 'Tinggi' : 'Normal';
+      $('badgeSimilarityStatus').textContent = avgSim > 18 ? 'Tinggi' : 'Wajar';
 
       $('metricWordCount').textContent = words.length.toLocaleString('id-ID');
       $('metricCharCount').textContent = text.length.toLocaleString('id-ID');
       $('metricSentenceCount').textContent = sentences.length.toLocaleString('id-ID');
       $('metricReadingTime').textContent = `${Math.max(1, Math.ceil(words.length / 200))} mnt`;
-      $('metricParagraphCount').textContent = `${paragraphs.length} Paragraf`;
+      $('metricParagraphCount').textContent = `${paragraphs.length} Perenggan`;
       $('statTimestamp').textContent = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
-      // Render Paragraph Cards
       const container = $('paragraphResultsContainer');
       container.innerHTML = '';
 
@@ -1005,7 +946,7 @@ ${text}`;
         card.className = 'p-3.5 rounded-xl border border-dark-border bg-dark-input hover:border-brand-500/40 transition flex flex-col space-y-2';
         card.innerHTML = `
           <div class="flex items-center justify-between text-xs">
-            <span class="font-bold text-slate-300">Paragraf ${item.index}</span>
+            <span class="font-bold text-slate-300">Perenggan ${item.index}</span>
             <div class="flex items-center space-x-1.5">
               <span class="px-2 py-0.5 rounded text-[10px] font-semibold ${item.classif.cls}">AI: ${item.ai}%</span>
               <span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400 border border-slate-700">Repetisi: ${item.sim}%</span>
@@ -1015,13 +956,12 @@ ${text}`;
         `;
         container.appendChild(card);
 
-        // Append to Print Container
         const printItem = document.createElement('div');
-        printItem.className = 'report-card';
+        printItem.className = 'p-3 border border-slate-300 rounded mb-2';
         printItem.innerHTML = `
           <div class="flex justify-between font-bold mb-1">
-            <span>Paragraf ${item.index}</span>
-            <span>AI Probability: ${item.ai}% | Repetisi: ${item.sim}%</span>
+            <span>Perenggan ${item.index}</span>
+            <span>AI: ${item.ai}% | Repetisi: ${item.sim}%</span>
           </div>
           <p>${escapeHtml(item.text)}</p>
         `;
@@ -1031,7 +971,6 @@ ${text}`;
       $('analyzerProgressStatus').textContent = 'Analisis selesai.';
       $('analyzerProgressStatus').className = 'text-xs text-emerald-400';
 
-      // Update Print Report Headers
       $('printReportMeta').textContent = `Dianalisis pada ${new Date().toLocaleString('id-ID')} | TextCheck AI Pro Standalone Engine`;
       $('printReportAi').textContent = `${avgAi}% (${overallClassif.label})`;
       $('printReportRep').textContent = `${avgSim}%`;
@@ -1103,14 +1042,14 @@ ${text}`;
         }
 
         if (!extractedText.trim()) {
-          throw new Error('Dokumen terbaca namun tidak ada teks yang dapat diekstrak (kemungkinan scan gambar).');
+          throw new Error('Dokumen terbaca namun tidak ada teks yang dapat diekstrak.');
         }
 
         $('analyzerInputArea').value = extractedText;
         $('btnRunAnalyzer').click();
 
       } catch (err) {
-        $('analyzerProgressStatus').textContent = `Ralat: ${err.message}`;
+        $('analyzerProgressStatus').textContent = `Kendala: ${err.message}`;
         $('analyzerProgressStatus').className = 'text-xs text-rose-400';
       }
     }
@@ -1144,7 +1083,6 @@ ${text}`;
       $('modalKey').classList.add('hidden');
     });
 
-    // Print Report
     $('btnPrintReport').addEventListener('click', () => {
       const text = $('analyzerInputArea').value.trim();
       if (!text) {
